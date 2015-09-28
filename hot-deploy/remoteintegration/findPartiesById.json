@@ -1,0 +1,1 @@
+{"serviceName":"findPartiesById","parameters":["java.util.HashMap",{"login.username":"admin","idToFind":"admin","login.password":"ofbiz"}]}

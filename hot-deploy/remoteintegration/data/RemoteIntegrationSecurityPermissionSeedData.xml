@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-engine-xml>
+    <SecurityPermission description="View operations in the RemoteIntegration Component." permissionId="REMOTEINTEGRATION_VIEW"/>
+    <SecurityPermission description="Create operations in the RemoteIntegration Component." permissionId="REMOTEINTEGRATION_CREATE"/>
+    <SecurityPermission description="Update operations in the RemoteIntegration Component." permissionId="REMOTEINTEGRATION_UPDATE"/>
+    <SecurityPermission description="Delete operations in the RemoteIntegration Component." permissionId="REMOTEINTEGRATION_DELETE"/>
+    <SecurityPermission description="ALL operations in the RemoteIntegration Component." permissionId="REMOTEINTEGRATION_ADMIN"/>
+
+    <SecurityGroupPermission groupId="SUPER" permissionId="REMOTEINTEGRATION_ADMIN"/>
+
+</entity-engine-xml>

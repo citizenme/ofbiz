@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-engine-xml>
+    <SecurityGroupPermission groupId="FULLADMIN" permissionId="REMOTEINTEGRATION_ADMIN"/>
+    <SecurityGroupPermission groupId="FLEXADMIN" permissionId="REMOTEINTEGRATION_CREATE"/>
+    <SecurityGroupPermission groupId="FLEXADMIN" permissionId="REMOTEINTEGRATION_DELETE"/>
+    <SecurityGroupPermission groupId="FLEXADMIN" permissionId="REMOTEINTEGRATION_UPDATE"/>
+    <SecurityGroupPermission groupId="FLEXADMIN" permissionId="REMOTEINTEGRATION_VIEW"/>
+    <SecurityGroupPermission groupId="VIEWADMIN" permissionId="REMOTEINTEGRATION_VIEW"/>
+    <SecurityGroupPermission groupId="BIZADMIN" permissionId="REMOTEINTEGRATION_ADMIN"/>
+</entity-engine-xml>
