@@ -164,5 +164,7 @@
 	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/jackson-annotations-2.6.2.jar"/>
 	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/jackson-core-2.6.2.jar"/>
 	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/jackson-databind-2.6.2.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/ofbiz-integration-0.1-SNAPSHOT.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ofbiz-integration"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

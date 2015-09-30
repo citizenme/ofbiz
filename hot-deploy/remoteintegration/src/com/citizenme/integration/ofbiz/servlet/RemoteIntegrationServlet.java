@@ -12,7 +12,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.ofbiz.base.util.Debug;
-import org.ofbiz.base.util.UtilMisc;
 import org.ofbiz.entity.DelegatorFactory;
 import org.ofbiz.entity.GenericDelegator;
 import org.ofbiz.entity.GenericValue;
@@ -21,9 +20,10 @@ import org.ofbiz.service.LocalDispatcher;
 import org.ofbiz.service.ServiceContainer;
 import org.ofbiz.service.ServiceUtil;
 
-import com.citizenme.integration.ofbiz.GenericValueListWrapper;
-import com.citizenme.integration.ofbiz.GenericValueWrapper;
-import com.citizenme.integration.ofbiz.Request;
+import com.citizenme.integration.ofbiz.model.GenericValueListWrapper;
+import com.citizenme.integration.ofbiz.model.GenericValueWrapper;
+import com.citizenme.integration.ofbiz.model.Request;
+import com.citizenme.integration.ofbiz.model.Response;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -63,90 +63,130 @@ public class RemoteIntegrationServlet extends HttpServlet {
       super.destroy();
   }
 
-  
   public void writeResponse(HttpServletResponse response, String value) throws IOException {
     response.setStatus(HttpServletResponse.SC_OK);
     response.getWriter().append(value);
     response.getWriter().flush();
     response.getWriter().close();
-    
-
   }
   
   public GenericValue convertWrapper(GenericValueWrapper wrapper) {
-    
-    
-    
     return null;
   }
   
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-//    StringBuffer jb = new StringBuffer();
-//    String line = null;
-//      BufferedReader reader = request.getReader();
-//      while ((line = reader.readLine()) != null)
-//        jb.append(line);
-    
-    Map<String, String> paramMap = UtilMisc.toMap(
-        "message", "message",
-        "login.username", "test",
-        "login.password", "test"
-    );
-    
-    Request r = om.readValue(request.getInputStream(), Request.class);
+    Response ofbizResponse = new Response();
 
-    Map<String, Object> requestMap = new HashMap<String, Object>();
-    
-    for (Map.Entry<String, Object> e : r.getParameters().entrySet()) {
-      
-      if (e.getValue() instanceof GenericValueListWrapper) {
-        
-        GenericValueListWrapper gvlw = (GenericValueListWrapper) e.getValue();
-        
-        List<GenericValue> genericValues = FastList.newInstance();
-        
-        for (GenericValueWrapper gvw : gvlw.getValues()) {
-          GenericValue gv = delegator.makeValue(gvw.getEntityName(), gvw.getFields());
-          genericValues.add(gv);
-        }
-        
-        requestMap.put(e.getKey(), genericValues);
-        
-      } else if (e.getValue() instanceof GenericValueWrapper) {
-
-        GenericValueWrapper gvw = (GenericValueWrapper) e.getValue();
-        
-        GenericValue genericValue = delegator.makeValue(gvw.getEntityName(), gvw.getFields());
-        
-        requestMap.put(e.getKey(), genericValue);
-        
-      } else {
-        requestMap.put(e.getKey(), e.getValue());
-      }
-    }
-    
-    
-    Map<String, Object> result = FastMap.newInstance();
     try {
-      result = dispatcher.runSync(r.getServiceName(), requestMap);
-    } catch (GenericServiceException e1) {
-      Debug.logError(e1, RemoteIntegrationServlet.class.getName());
-      throw new RuntimeException(e1);
-    }
-    
-    if (ServiceUtil.isSuccess(result)) {
-      writeResponse(response, om.writeValueAsString(result));
-    }
+      Request ofbizRequest = om.readValue(request.getInputStream(), Request.class);
   
-    if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-      writeResponse(response, "{ \"status\": false, \"message\": \"error\" }");
-    }
+      ofbizResponse.setServiceName(ofbizRequest.getServiceName());
+      
+      Map<String, Object> requestMap = new HashMap<String, Object>();
+      
+      for (Map.Entry<String, Object> e : ofbizRequest.getParameters().entrySet()) {
+        
+        if (e.getValue() instanceof GenericValueListWrapper) {
+          
+          GenericValueListWrapper gvlw = (GenericValueListWrapper) e.getValue();
+          
+          List<GenericValue> genericValues = FastList.newInstance();
+          
+          for (GenericValueWrapper gvw : gvlw.getValues()) {
+            GenericValue gv = delegator.makeValue(gvw.getEntityName(), gvw.getFields());
+            genericValues.add(gv);
+          }
+          
+          requestMap.put(e.getKey(), genericValues);
+          
+        } else if (e.getValue() instanceof GenericValueWrapper) {
+  
+          GenericValueWrapper gvw = (GenericValueWrapper) e.getValue();
+          
+          GenericValue genericValue = delegator.makeValue(gvw.getEntityName(), gvw.getFields());
+          
+          requestMap.put(e.getKey(), genericValue);
+          
+        } else {
+          requestMap.put(e.getKey(), e.getValue());
+        }
+      }
+      
+      Map<String, Object> result = FastMap.newInstance();
+  
+      result = dispatcher.runSync(ofbizRequest.getServiceName(), requestMap);
+    
+      if (ServiceUtil.isSuccess(result)) {
+      
+        ofbizResponse.setStatus(true);
+        ofbizResponse.setMessage("OK");
+        
+        for (Map.Entry<String, Object> e : result.entrySet()) {
+          
+          if (e.getValue() instanceof GenericValue) {
 
+            GenericValue gv = (GenericValue) e.getValue();
+            GenericValueWrapper gvw = new GenericValueWrapper();
+            
+            gvw.setEntityName(gv.getEntityName());
+            
+            for (Map.Entry<String, Object> e1 : gv.entrySet()) {
+              gvw.put(e1.getKey(), e1.getValue());
+            }
+            ofbizResponse.put(e.getKey(), gvw);
+
+          } else if (e.getValue() instanceof List<?>) {
+            
+            List<?> l1 = (List<?>) e.getValue();
+            
+            // Cheating by checking if first element in list is of a known type GenericValue (use reflecting instead?)
+            if (l1.size() > 0 && l1.get(0) instanceof GenericValue) {
+              
+              List<GenericValue> l2 = (List<GenericValue>) l1;
+              
+              GenericValueListWrapper gvlw = new GenericValueListWrapper();
+              
+              for (GenericValue gv : l2) {
+                
+                GenericValueWrapper gvw = new GenericValueWrapper();
+                
+                gvw.setEntityName(gv.getEntityName());
+                
+                for (Map.Entry<String, Object> e1 : gv.entrySet()) {
+                  gvw.put(e1.getKey(), e1.getValue());
+                }
+                
+                gvlw.add(gvw);
+              }
+            
+              ofbizResponse.put(e.getKey(), gvlw);
+            } else {
+              // Arbitrary list - not sure what it might be - but returning it just in case
+              ofbizResponse.put(e.getKey(), e.getValue());
+            }
+          } else {
+            ofbizResponse.put(e.getKey(), e.getValue());
+          }
+        }
+      }
+    
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        ofbizResponse.setStatus(false);
+        ofbizResponse.setMessage("Failed");
+      }
+
+      writeResponse(response, om.writeValueAsString(ofbizResponse));
+
+    } catch (GenericServiceException | IllegalArgumentException | IOException e) {
+      Debug.logError(e, RemoteIntegrationServlet.class.getName());
+      ofbizResponse.setStatus(false);
+      ofbizResponse.setMessage("Failed: " + e.getMessage());
+      writeResponse(response, om.writeValueAsString(ofbizResponse));
+      throw new RuntimeException(e);
+    }
             
   }
-
-  
   
 }
