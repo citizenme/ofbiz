@@ -20,10 +20,10 @@ import org.ofbiz.service.LocalDispatcher;
 import org.ofbiz.service.ServiceContainer;
 import org.ofbiz.service.ServiceUtil;
 
-import com.citizenme.integration.ofbiz.model.GenericValueListWrapper;
-import com.citizenme.integration.ofbiz.model.GenericValueWrapper;
-import com.citizenme.integration.ofbiz.model.Request;
-import com.citizenme.integration.ofbiz.model.Response;
+import com.citizenme.integration.ofbiz.model.oldtest.GenericValueListWrapper;
+import com.citizenme.integration.ofbiz.model.oldtest.GenericValueWrapper;
+import com.citizenme.integration.ofbiz.model.oldtest.OFBizRequest;
+import com.citizenme.integration.ofbiz.model.oldtest.OFBizResponse;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -75,12 +75,12 @@ public class RemoteIntegrationServlet extends HttpServlet {
   }
   
   @Override
-  public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+  public void doPost(HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws ServletException, IOException {
 
-    Response ofbizResponse = new Response();
+    OFBizResponse ofbizResponse = new OFBizResponse();
 
     try {
-      Request ofbizRequest = om.readValue(request.getInputStream(), Request.class);
+      OFBizRequest ofbizRequest = om.readValue(servletRequest.getInputStream(), OFBizRequest.class);
   
       ofbizResponse.setServiceName(ofbizRequest.getServiceName());
       
@@ -177,13 +177,16 @@ public class RemoteIntegrationServlet extends HttpServlet {
         ofbizResponse.setMessage("Failed");
       }
 
-      writeResponse(response, om.writeValueAsString(ofbizResponse));
+      Debug.log("Response: " + om.writeValueAsString(ofbizResponse));
+      
+      servletResponse.setContentType("application/json");
+      writeResponse(servletResponse, om.writeValueAsString(ofbizResponse));
 
     } catch (GenericServiceException | IllegalArgumentException | IOException e) {
       Debug.logError(e, RemoteIntegrationServlet.class.getName());
       ofbizResponse.setStatus(false);
       ofbizResponse.setMessage("Failed: " + e.getMessage());
-      writeResponse(response, om.writeValueAsString(ofbizResponse));
+      writeResponse(servletResponse, om.writeValueAsString(ofbizResponse));
       throw new RuntimeException(e);
     }
             

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry exported="true" kind="con" path="GROOVY_SUPPORT"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry kind="lib" path="applications/content/lib/fontbox-1.7.1.jar"/>
 	<classpathentry kind="lib" path="applications/content/lib/jempbox-1.7.1.jar"/>
 	<classpathentry kind="lib" path="applications/content/lib/pdfbox-1.7.1.jar"/>
@@ -121,7 +120,6 @@
 	<classpathentry kind="lib" path="framework/service/lib/commons-httpclient-3.1.jar"/>
 	<classpathentry kind="lib" path="framework/service/lib/neethi-2.0.4.jar"/>
 	<classpathentry kind="lib" path="framework/service/lib/XmlSchema-1.4.3.jar"/>
-	<classpathentry kind="lib" path="framework/testtools/lib/org.springframework.test-3.1.0.M2.jar"/>
 	<classpathentry kind="lib" path="framework/testtools/lib/org.springframework.core-3.1.0.M2.jar"/>
 	<classpathentry kind="lib" path="framework/webapp/lib/DataVision-1.0.0.jar"/>
 	<classpathentry kind="lib" path="framework/webapp/lib/ezmorph-0.9.1.jar"/>
@@ -166,5 +164,22 @@
 	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/jackson-databind-2.6.2.jar"/>
 	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/ofbiz-integration-0.1-SNAPSHOT.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ofbiz-integration"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java-7-openjdk-amd64"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/hibernate-validator-5.2.2.Final.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/slf4j-simple-1.6.1.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/wink-1.4.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/wink-client-1.4.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/wink-common-1.4.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/wink-server-1.4.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/activation-1.1.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/jaxb-api-2.2.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/jaxb-impl-2.2.1.1.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/slf4j-api-1.6.1.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/stax-api-1.0-2.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/validation-api-1.1.0.Final.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/commons-lang-2.3.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/geronimo-jaxrs_1.1_spec-1.0.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/jboss-logging-3.3.0.Final.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/classmate-1.3.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -54,7 +54,7 @@
     <!-- NOTE: not all app servers support mounting implementations of the HttpSessionActivationListener interface -->
     <!-- <listener><listener-class>org.ofbiz.webapp.control.ControlActivationEventListener</listener-class></listener> -->
 
-    <servlet>
+    <!-- servlet>
         <servlet-name>RemoteIntegrationServlet</servlet-name>
         <servlet-class>com.citizenme.integration.ofbiz.servlet.RemoteIntegrationServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
@@ -62,7 +62,22 @@
  
     <servlet-mapping>
         <servlet-name>RemoteIntegrationServlet</servlet-name>
-        <url-pattern>/*</url-pattern>
+        <url-pattern>/RemoteIntegrationServlet</url-pattern>
+    </servlet-mapping -->
+
+    <servlet>
+      <servlet-name>restServlet</servlet-name>
+      <servlet-class>org.apache.wink.server.internal.servlet.RestServlet</servlet-class>
+      <init-param>
+        <param-name>javax.ws.rs.Application</param-name>
+        <param-value>com.citizenme.integration.ofbiz.servlet.RemoteIntegrationApplication</param-value>
+      </init-param>
+      <load-on-startup>1</load-on-startup>
+    </servlet>
+ 
+    <servlet-mapping>
+      <servlet-name>restServlet</servlet-name>
+      <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
     <!-- servlet>
