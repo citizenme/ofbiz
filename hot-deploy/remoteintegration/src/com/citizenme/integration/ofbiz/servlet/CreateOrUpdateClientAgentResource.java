@@ -27,6 +27,7 @@ import org.ofbiz.service.ServiceContainer;
 import org.ofbiz.service.ServiceUtil;
 
 import com.citizenme.integration.ofbiz.OFBizRequest;
+import com.citizenme.integration.ofbiz.helper.ContactMechHelper;
 import com.citizenme.integration.ofbiz.helper.RequestHelper;
 import com.citizenme.integration.ofbiz.model.ClientAgent;
 
@@ -98,10 +99,6 @@ public class CreateOrUpdateClientAgentResource {
         
         agentResult = dispatcher.runSync(serviceName, agentRequestMap);
 
-//        if (ServiceUtil.isSuccess(result)) {
-//          return Response.ok(createResponse(getClass().getName(), true, serviceName)).type("application/json").build();
-//        }
-        
         if (ServiceUtil.isError(agentResult) || ServiceUtil.isFailure(agentResult)) {
           return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(agentResult))).type("application/json").build();
         }
@@ -116,25 +113,20 @@ public class CreateOrUpdateClientAgentResource {
       relationshipRequestMap.put("partyRelationshipTypeId", agent.getClientOrganisationRelationshipType());
       relationshipRequestMap.put("roleTypeIdFrom", "ACCOUNT"); // Hardcode for now
       relationshipRequestMap.put("roleTypeIdTo", "CONTACT"); // Hardcode for now
-//      List<GenericValue> partyRelationShipList = PartyRelationshipHelper.getActivePartyRelationships(delegator, relationshipRequestMap);
 
       Map<String, Object> relationshipResult = null;
 
-      // Only attempt to create if relationship between agent and organisation doesn't exist
-//      if (UtilValidate.isEmpty(partyRelationShipList)) {
-//        relationshipResult = dispatcher.runSync("createPartyRelationship", relationshipRequestMap);
-
       relationshipResult = dispatcher.runSync("createUpdatePartyRelationshipAndRoles", relationshipRequestMap);
       
-        if (ServiceUtil.isSuccess(relationshipResult)) {
-          return Response.ok(createResponse(getClass().getName(), true, serviceName)).type("application/json").build();
-        }
-        
-        if (ServiceUtil.isError(relationshipResult) || ServiceUtil.isFailure(relationshipResult)) {
-          return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(relationshipResult))).type("application/json").build();
-        }
-//      }
+      if (ServiceUtil.isError(relationshipResult) || ServiceUtil.isFailure(relationshipResult)) {
+        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(relationshipResult))).type("application/json").build();
+      }
 
+      String status = ContactMechHelper.findOrCreatePartyContactMechEmail (ofbizRequest.getLogin(), ofbizRequest.getPassword(), agent.getPartyId(), agent.getEmail(), dispatcher);
+      
+      if (status != null)
+        return Response.serverError().entity(status).type("application/json").build();
+        
       return Response.ok(createResponse(getClass().getName(), true, "OK")).type("application/json").build();
 
     } catch (GenericEntityException | IOException | GenericServiceException | RuntimeException e) {

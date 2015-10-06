@@ -78,4 +78,14 @@ public class RequestHelper {
       return "";
     }
   }
+  
+  public static String toJson(Object o) {
+    
+    try {
+      return om.writeValueAsString(o);
+    } catch (JsonProcessingException e) {
+      return "";
+    }
+  }
+  
 }

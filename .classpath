@@ -162,7 +162,7 @@
 	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/jackson-annotations-2.6.2.jar"/>
 	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/jackson-core-2.6.2.jar"/>
 	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/jackson-databind-2.6.2.jar"/>
-	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/ofbiz-integration-0.1-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/ofbiz-integration-0.1-SNAPSHOT.jar" sourcepath="/ofbiz-integration/src/main/java"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ofbiz-integration"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java-7-openjdk-amd64"/>
 	<classpathentry kind="lib" path="hot-deploy/remoteintegration/lib/hibernate-validator-5.2.2.Final.jar"/>
