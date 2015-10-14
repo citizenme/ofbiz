@@ -104,6 +104,7 @@ public class CreateOrUpdateClientAgentResource {
         }
       }
 
+      // Create relationship from client agent to client organisation
       Map<String, Object> relationshipRequestMap = new HashMap<String, Object>();
       relationshipRequestMap.put("login.username", ofbizRequest.getLogin());
       relationshipRequestMap.put("login.password", ofbizRequest.getPassword());
@@ -111,8 +112,8 @@ public class CreateOrUpdateClientAgentResource {
       relationshipRequestMap.put("partyIdFrom", agent.getPartyId());
       relationshipRequestMap.put("partyIdTo", agent.getClientOrganisationPartyId());
       relationshipRequestMap.put("partyRelationshipTypeId", agent.getClientOrganisationRelationshipType());
-      relationshipRequestMap.put("roleTypeIdFrom", "ACCOUNT"); // Hardcode for now
-      relationshipRequestMap.put("roleTypeIdTo", "CONTACT"); // Hardcode for now
+      relationshipRequestMap.put("roleTypeIdFrom", "ACCOUNT"); 
+      relationshipRequestMap.put("roleTypeIdTo", "CONTACT");
 
       Map<String, Object> relationshipResult = null;
 
@@ -122,11 +123,29 @@ public class CreateOrUpdateClientAgentResource {
         return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(relationshipResult))).type("application/json").build();
       }
 
+      // Add Contact Mechanism EMAIL_ADDRESS to client agent
       String status = ContactMechHelper.findOrCreatePartyContactMechEmail (ofbizRequest.getLogin(), ofbizRequest.getPassword(), agent.getPartyId(), agent.getEmail(), dispatcher);
       
       if (status != null)
         return Response.serverError().entity(status).type("application/json").build();
-        
+
+      
+      // Check if party is already set-up with relationship CUSTOMER
+      GenericValue partyToRole = delegator.findOne("PartyRole", UtilMisc.toMap("partyId", agent.getPartyId(), "roleTypeId", "CUSTOMER"), false);
+      if (partyToRole == null) {
+        // Add party role CUSTOMER
+        Map<String, Object> createPartyRoleMap = new HashMap<String, Object>();
+        createPartyRoleMap.put("login.username", ofbizRequest.getLogin());
+        createPartyRoleMap.put("login.password", ofbizRequest.getPassword());
+        createPartyRoleMap.put("partyId", agent.getPartyId());
+        createPartyRoleMap.put("roleTypeId", "CUSTOMER");
+        Map<String, Object> createPartyRoleResult = dispatcher.runSync("createPartyRole", createPartyRoleMap);
+  
+        if (ServiceUtil.isError(createPartyRoleResult) || ServiceUtil.isFailure(createPartyRoleResult)) {
+          return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(relationshipResult))).type("application/json").build();
+        }
+      }
+
       return Response.ok(createResponse(getClass().getName(), true, "OK")).type("application/json").build();
 
     } catch (GenericEntityException | IOException | GenericServiceException | RuntimeException e) {
