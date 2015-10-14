@@ -2210,8 +2210,17 @@ public class ModelFormField {
                 retVal = this.description.expandString(localContext, locale);
             }
             // try to get the entry for the field if description doesn't expand to anything
-            if (UtilValidate.isEmpty(retVal)) retVal = fieldValue;
-            if (UtilValidate.isEmpty(retVal)) retVal = "";
+            if (UtilValidate.isEmpty(retVal)) {
+                retVal = fieldValue;
+            } 
+            if (UtilValidate.isEmpty(retVal)) {
+                retVal = "";
+            } else if (this.getModelFormField().getEncodeOutput()) {
+                StringUtil.SimpleEncoder simpleEncoder = (StringUtil.SimpleEncoder) context.get("simpleEncoder");
+                if (simpleEncoder != null) {
+                    retVal = simpleEncoder.encode(retVal);
+                }
+            }
             return retVal;
         }
 
@@ -3465,12 +3474,38 @@ public class ModelFormField {
             return this.defaultOption;
         }
 
+        public String getDefaultOption(Map<String, Object> context) {
+            String defaultOption = getDefaultOption();
+
+            Map<String, Object> parameters = UtilGenerics.checkMap(context.get("parameters"), String.class, Object.class);
+            if (UtilValidate.isNotEmpty(parameters)) {
+                String fieldName = this.getModelFormField().getName();
+                if (parameters.containsKey(fieldName)) {
+                    defaultOption = (String) parameters.get(fieldName.concat("_op"));
+                }
+            }
+            return defaultOption;
+        }
+
         public boolean getHideIgnoreCase() {
             return this.hideIgnoreCase;
         }
 
         public boolean getHideOptions() {
             return this.hideOptions;
+        }
+
+        public boolean getIgnoreCase(Map<String, Object> context) {
+            Boolean ignoreCase = getIgnoreCase();
+
+            Map<String, Object> parameters = UtilGenerics.checkMap(context.get("parameters"), String.class, Object.class);
+            if (UtilValidate.isNotEmpty(parameters)) {
+                String fieldName = this.getModelFormField().getName();
+                if (parameters.containsKey(fieldName)) {
+                    ignoreCase = "Y".equals((String) parameters.get(fieldName.concat("_ic")));
+                }
+            }
+            return ignoreCase;
         }
 
         @Override
@@ -3502,8 +3537,34 @@ public class ModelFormField {
             return this.defaultOptionFrom;
         }
 
+        public String getDefaultOptionFrom(Map<String, Object> context) {
+            String defaultOption = getDefaultOptionFrom();
+
+            Map<String, Object> parameters = UtilGenerics.checkMap(context.get("parameters"), String.class, Object.class);
+            if (UtilValidate.isNotEmpty(parameters)) {
+                String fieldName = this.getModelFormField().getName();
+                if (parameters.containsKey(fieldName.concat("_fld0_value"))){
+                    defaultOption = (String)parameters.get(fieldName.concat("_fld0_op"));
+                }
+            }
+            return defaultOption;
+        }
+
         public String getDefaultOptionThru() {
             return this.defaultOptionThru;
+        }
+
+        public String getDefaultOptionThru(Map<String, Object> context) {
+            String defaultOption = getDefaultOptionThru();
+
+            Map<String, Object> parameters = UtilGenerics.checkMap(context.get("parameters"), String.class, Object.class);
+            if (UtilValidate.isNotEmpty(parameters)) {
+                String fieldName = this.getModelFormField().getName();
+                if( parameters.containsKey(fieldName.concat("_fld1_value"))) {
+                    defaultOption = (String)parameters.get(fieldName.concat("_fld1_op"));
+                }
+            }
+            return defaultOption;
         }
     }
 

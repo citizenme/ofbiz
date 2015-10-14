@@ -865,15 +865,8 @@ lookupDescriptionLoaded.prototype.update = function() {
             url : this.url,
             type : "POST",
             data : this.allParams,
-            async : false,
             success : function(result) {
-                // This would be far more reliable if we were removing
-                // the widget boundaries in LookupDecorator using
-                // widgetVerbose in context :/
-                if (result.split("ajaxAutocompleteOptions.ftl -->")[1]) {
-                    setLookDescription(_fieldId, result.split("ajaxAutocompleteOptions.ftl -->")[1].trim().split("<!--")[0].trim(),
-                            "", "");
-                }
+                setLookDescription(_fieldId, result.trim(), "", "");
             }
         });
     }
