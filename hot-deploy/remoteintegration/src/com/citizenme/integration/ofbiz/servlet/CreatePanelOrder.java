@@ -47,6 +47,11 @@ public class CreatePanelOrder {
   public static String getOrderItemSequence(int seq) {
     return String.format("%05d", seq);
   }
+
+  private final static String BILLING_LOCATION_PURPOSE_TYPE_ID = "BILLING_LOCATION";
+  
+  private final static String ORIGIN_FACILITY_ID = "10000";
+  private final static String PRODUCT_STORE_ID = "10000";
   
   @POST
   @Consumes("application/json")
@@ -57,8 +62,6 @@ public class CreatePanelOrder {
     
     Map<String, Object> result = null;
 
-    String purposeTypeId = "BILLING_LOCATION";
-    
     try {
       OFBizRequest ofbizRequest = RequestHelper.deserializeOFBizRequest(requestBodyStream);
       
@@ -71,27 +74,30 @@ public class CreatePanelOrder {
 
       // Create billing email as part of party
       result = ContactMechHelper.findOrCreatePartyContactMechEmailAddress (
-        ofbizRequest.getLogin()
-      , ofbizRequest.getPassword()
-      , order.getClientPartyId()
-      , order.getBillingEmail()
-      , "PRIMARY_EMAIL"
-      , dispatcher);
+          ofbizRequest.getLogin()
+        , ofbizRequest.getPassword()
+        , order.getClientPartyId()
+        , order.getBillingEmail()
+        , "PRIMARY_EMAIL"
+        , dispatcher
+      );
       
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
         return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
       
+      // TODO: Figure out how to assign email to order/invoice and send PDF to same
       String billingEmailContactMechId = (String) result.get("contactMechId");
 
       // Create billing location as part of party and attach same billing location to order
       result = ContactMechHelper.findOrCreatePartyContactMechPostalAddress (
-        ofbizRequest.getLogin()
-      , ofbizRequest.getPassword()
-      , order.getClientPartyId()
-      , order.getBillingLocation()
-      , purposeTypeId
-      , dispatcher);
+          ofbizRequest.getLogin()
+        , ofbizRequest.getPassword()
+        , order.getClientPartyId()
+        , order.getBillingLocation()
+        , BILLING_LOCATION_PURPOSE_TYPE_ID
+        , dispatcher
+      );
       
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
         return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
@@ -105,31 +111,27 @@ public class CreatePanelOrder {
         , "partyId", order.getClientPartyId()
         , "orderTypeId", "SALES_ORDER"
         , "currencyUom", order.getCurrency()
-        , "productStoreId", "10000" // CitizenMe store
+        , "productStoreId", PRODUCT_STORE_ID // CitizenMe store
         , "orderId", order.getOrderId()
         , "placingCustomerPartyId", order.getClientPartyId()
         , "endUserCustomerPartyId", order.getClientPartyId()
         , "billToCustomerPartyId", order.getClientPartyId()
         , "billFromVendorPartyId", "Company"
+        , "originFacilityId", ORIGIN_FACILITY_ID
+        , "orderName", ""
       );
 
-      // Add order payment info - presumably where to send invoice
+      // Add order payment info
       List<GenericValue> orderPaymentInfo = new LinkedList<GenericValue>();
       
-     GenericValue orderContactMech = delegator.makeValue("OrderContactMech", UtilMisc.toMap("contactMechId", billingLocationContactMechId, "contactMechPurposeTypeId", purposeTypeId));
-     orderPaymentInfo.add(orderContactMech);
+      GenericValue orderContactMech = delegator.makeValue("OrderContactMech", UtilMisc.toMap("contactMechId", billingLocationContactMechId, "contactMechPurposeTypeId", BILLING_LOCATION_PURPOSE_TYPE_ID));
+      orderPaymentInfo.add(orderContactMech);
 
-     // TODO: Order, invoice email association - and send off...?
-     
       // Add order payment preference hard-coded for now as PAYPAL
       GenericValue orderPaymentPreference = delegator.makeValue(
-        "OrderPaymentPreference"
-      , UtilMisc.toMap(
-        "paymentMethodTypeId", "EXT_PAYPAL"
-      // , "paymentMethodId", "9015"
-      // , "statusId", "PAYMENT_NOT_AUTH"
-      // , "overflowFlag", "N"
-      // , "maxAmount", order.getOrderTotal()
+          "OrderPaymentPreference"
+        , UtilMisc.toMap(
+            "paymentMethodTypeId", "EXT_PAYPAL"
       ));
 
       orderPaymentInfo.add(orderPaymentPreference);
@@ -144,23 +146,23 @@ public class CreatePanelOrder {
       List<GenericValue> orderItemShipGroupInfo = new LinkedList<GenericValue>();
 
       GenericValue orderItemShipGroup = delegator.makeValue(
-        "OrderItemShipGroup"
-      , UtilMisc.toMap("carrierPartyId", "_NA_"
-      , "isGift", "N"
-      , "shipGroupSeqId", shipGroupSeqId
-      , "shipmentMethodTypeId", "NO_SHIPPING"
+          "OrderItemShipGroup"
+        , UtilMisc.toMap("carrierPartyId", "_NA_"
+        , "isGift", "N"
+        , "shipGroupSeqId", shipGroupSeqId
+        , "shipmentMethodTypeId", "NO_SHIPPING"
+        , "contactMechId", billingLocationContactMechId // OFBiz bug: if there's no shipping location then VAT is not properly added to order
       ));
       orderItemShipGroupInfo.add(orderItemShipGroup);
 
-      
       GenericValue orderItem = null;
       GenericValue orderItemAdjustment = null;
       GenericValue orderItemShipGroupAssoc = null;
 
       // Create panel entry line item + VAT adjustment
       orderItem = delegator.makeValue(
-        "OrderItem"
-      , UtilMisc.toMap(
+          "OrderItem"
+        , UtilMisc.toMap(
           "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
         , "orderItemTypeId", "PRODUCT_ORDER_ITEM"
         , "prodCatalogId", "CitizenMe"
@@ -173,29 +175,32 @@ public class CreatePanelOrder {
         , "unitListPrice", order.getParticipantUnitFee()
         , "statusId", "ITEM_CREATED" // "ITEM_APPROVED"
         , "itemDescription", "Panel Entry"
-          ));
+      ));
       orderItems.add(orderItem);
       
       orderItemShipGroupAssoc = delegator.makeValue(
-        "OrderItemShipGroupAssoc"
-      , UtilMisc.toMap("orderItemSeqId", getOrderItemSequence(orderItemSeqId)
-      , "quantity", order.getPaidParticipants()
-      , "shipGroupSeqId", shipGroupSeqId
+          "OrderItemShipGroupAssoc"
+        , UtilMisc.toMap("orderItemSeqId", getOrderItemSequence(orderItemSeqId)
+        , "quantity", order.getPaidParticipants()
+        , "shipGroupSeqId", shipGroupSeqId
       ));
       orderItemShipGroupInfo.add(orderItemShipGroupAssoc);
       
       orderItemAdjustment = delegator.makeValue(
-        "OrderAdjustment"
-      , UtilMisc.toMap(
-        "orderAdjustmentTypeId", "VAT_TAX"
-      , "taxAuthGeoId", "GBR"
-      , "taxAuthPartyId", "10020" // UK_HMRC
-      , "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
-      , "overrideGlAccountId", "224301" // VAT COLLECTED UK
-      , "primaryGeoId", "GBR" // Great Britain
-      , "shipGroupSeqId", shipGroupSeqId
-      , "sourcePercentage", order.getVatPct()));
-      // orderAdjustments.add(orderAdjustment);
+          "OrderAdjustment"
+        , UtilMisc.toMap(
+          "orderAdjustmentTypeId", "SALES_TAX"
+        , "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
+        , "overrideGlAccountId", "224301" // VAT COLLECTED UK
+        , "primaryGeoId", "GBR" // Great Britain
+        , "shipGroupSeqId", shipGroupSeqId
+        , "sourcePercentage", order.getVatPct()
+        , "taxAuthGeoId", "GBR"
+        , "taxAuthPartyId", "10020" // UK_HMRC
+        , "amount", order.getParticipantUnitFee().multiply(order.getPaidParticipants()).multiply(order.getVatPct()).divide(new BigDecimal(100))
+        , "comments", "UK VAT @ 20%"
+        , "taxAuthorityRateSeqId", "10001"
+      ));
       orderItemShipGroupInfo.add(orderItemAdjustment);
 
       orderItemSeqId++;
@@ -204,8 +209,8 @@ public class CreatePanelOrder {
       
         // Create panel fee line item + VAT adjustment
         orderItem = delegator.makeValue(
-          "OrderItem"
-        , UtilMisc.toMap(
+            "OrderItem"
+          , UtilMisc.toMap(
             "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
           , "orderItemTypeId", "PRODUCT_ORDER_ITEM"
           , "prodCatalogId", "CitizenMe"
@@ -218,29 +223,32 @@ public class CreatePanelOrder {
           , "unitListPrice", order.getPanelFee()
           , "statusId", "ITEM_CREATED" // "ITEM_APPROVED"
           , "itemDescription", "Panel Fee"
-            ));
+        ));
         orderItems.add(orderItem);
 
         orderItemShipGroupAssoc = delegator.makeValue(
-          "OrderItemShipGroupAssoc"
-        , UtilMisc.toMap("orderItemSeqId", getOrderItemSequence(orderItemSeqId)
-        , "quantity", BigDecimal.ONE
-        , "shipGroupSeqId", shipGroupSeqId
+            "OrderItemShipGroupAssoc"
+          , UtilMisc.toMap("orderItemSeqId", getOrderItemSequence(orderItemSeqId)
+          , "quantity", BigDecimal.ONE
+          , "shipGroupSeqId", shipGroupSeqId
         ));
         orderItemShipGroupInfo.add(orderItemShipGroupAssoc);
         
         orderItemAdjustment = delegator.makeValue(
-          "OrderAdjustment"
-        , UtilMisc.toMap(
-          "orderAdjustmentTypeId", "VAT_TAX"
-        , "taxAuthGeoId", "GBR"
-        , "taxAuthPartyId", "10020" // UK_HMRC
-        , "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
-        , "overrideGlAccountId", "224301" // VAT COLLECTED UK
-        , "primaryGeoId", "GBR" // Great Britain
-        , "shipGroupSeqId", shipGroupSeqId
-        , "sourcePercentage", order.getVatPct()));
-        // orderAdjustments.add(orderAdjustment);
+            "OrderAdjustment"
+          , UtilMisc.toMap(
+            "orderAdjustmentTypeId", "SALES_TAX"
+          , "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
+          , "overrideGlAccountId", "224301" // VAT COLLECTED UK
+          , "primaryGeoId", "GBR" // Great Britain
+          , "shipGroupSeqId", shipGroupSeqId
+          , "sourcePercentage", order.getVatPct()
+          , "taxAuthGeoId", "GBR"
+          , "taxAuthPartyId", "10020" // UK_HMRC
+          , "amount", order.getPanelFee().multiply(order.getVatPct()).divide(new BigDecimal(100))
+          , "comments", "UK VAT @ 20%"
+          , "taxAuthorityRateSeqId", "10001"
+        ));
         orderItemShipGroupInfo.add(orderItemAdjustment);
         
         orderItemSeqId++;
@@ -250,55 +258,57 @@ public class CreatePanelOrder {
       orderItem = delegator.makeValue(
           "OrderItem"
         , UtilMisc.toMap(
-            "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
-          , "orderItemTypeId", "PRODUCT_ORDER_ITEM"
-          , "prodCatalogId", "CitizenMe"
-          , "productId", "TRANS-FEE"
-          , "quantity", BigDecimal.ONE
-          , "selectedAmount", BigDecimal.ZERO
-          , "isPromo", "N"
-          , "isModifiedPrice", "N"
-          , "unitPrice", order.getTransactionFee()
-          , "unitListPrice", order.getTransactionFee()
-          , "statusId", "ITEM_CREATED" // "ITEM_APPROVED"
-          , "itemDescription", "Transaction Fee"
-            ));
+          "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
+        , "orderItemTypeId", "PRODUCT_ORDER_ITEM"
+        , "prodCatalogId", "CitizenMe"
+        , "productId", "TRANS-FEE"
+        , "quantity", BigDecimal.ONE
+        , "selectedAmount", BigDecimal.ZERO
+        , "isPromo", "N"
+        , "isModifiedPrice", "N"
+        , "unitPrice", order.getTransactionFee()
+        , "unitListPrice", order.getTransactionFee()
+        , "statusId", "ITEM_CREATED" // "ITEM_APPROVED"
+        , "itemDescription", "Transaction Fee"
+      ));
       orderItems.add(orderItem);
           
       orderItemShipGroupAssoc = delegator.makeValue(
-        "OrderItemShipGroupAssoc"
-      , UtilMisc.toMap("orderItemSeqId", getOrderItemSequence(orderItemSeqId)
-      , "quantity", BigDecimal.ONE
-      , "shipGroupSeqId", shipGroupSeqId
+          "OrderItemShipGroupAssoc"
+        , UtilMisc.toMap("orderItemSeqId", getOrderItemSequence(orderItemSeqId)
+        , "quantity", BigDecimal.ONE
+        , "shipGroupSeqId", shipGroupSeqId
       ));
       orderItemShipGroupInfo.add(orderItemShipGroupAssoc);
         
       orderItemAdjustment = delegator.makeValue(
-          "OrderAdjustment"
-        , UtilMisc.toMap(
-          "orderAdjustmentTypeId", "VAT_TAX"
-        , "taxAuthGeoId", "GBR"
-        , "taxAuthPartyId", "10020" // UK_HMRC
+        "OrderAdjustment"
+      , UtilMisc.toMap(
+          "orderAdjustmentTypeId", "SALES_TAX"
         , "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
         , "overrideGlAccountId", "224301" // VAT COLLECTED UK
         , "primaryGeoId", "GBR" // Great Britain
         , "shipGroupSeqId", shipGroupSeqId
-        , "sourcePercentage", order.getVatPct()));
-      // orderAdjustments.add(orderAdjustment);
+        , "sourcePercentage", order.getVatPct()
+        , "taxAuthGeoId", "GBR"
+        , "taxAuthPartyId", "10020" // UK_HMRC
+        , "amount", order.getTransactionFee().multiply(order.getVatPct()).divide(new BigDecimal(100))
+        , "comments", "UK VAT @ 20%"
+        , "taxAuthorityRateSeqId", "10001"
+      ));
       orderItemShipGroupInfo.add(orderItemAdjustment);
       
       orderRequestMap.put("orderItems", orderItems);
-      // orderRequestMap.put("orderAdjustments", orderAdjustments);
       orderRequestMap.put("orderItemShipGroupInfo", orderItemShipGroupInfo);
       
+      // No order terms
       List<GenericValue> orderTerms = new LinkedList<GenericValue>();
       orderRequestMap.put("orderTerms", orderTerms);
       
+      // No order "total" adjustments
       List<GenericValue> orderAdjustments = new LinkedList<GenericValue>();
       orderRequestMap.put("orderAdjustments", orderAdjustments);
       
-      //             List<GenericValue> emails = delegator.findByAnd("OrderContactMech", UtilMisc.toMap("orderId", orderId, "contactMechPurposeTypeId", "ORDER_EMAIL"), null, false);
-
       result = dispatcher.runSync("storeOrder", orderRequestMap);
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
