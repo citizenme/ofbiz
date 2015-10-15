@@ -29,6 +29,7 @@ import org.ofbiz.service.ServiceContainer;
 import org.ofbiz.service.ServiceUtil;
 
 import com.citizenme.integration.ofbiz.OFBizRequest;
+import com.citizenme.integration.ofbiz.helper.ContactMechHelper;
 import com.citizenme.integration.ofbiz.helper.RequestHelper;
 import com.citizenme.integration.ofbiz.model.PanelSalesOrder;
 
@@ -54,6 +55,10 @@ public class CreatePanelOrder {
   //@PathParam("partyId") String partyId,
   public Response execute(InputStream requestBodyStream) {
     
+    Map<String, Object> result = null;
+
+    String purposeTypeId = "BILLING_LOCATION";
+    
     try {
       OFBizRequest ofbizRequest = RequestHelper.deserializeOFBizRequest(requestBodyStream);
       
@@ -63,6 +68,36 @@ public class CreatePanelOrder {
         throw new RuntimeException("Invalid input: " + constraintViolations.toString());
       
       PanelSalesOrder order = (PanelSalesOrder) ofbizRequest.getRequestParameter();
+
+      // Create billing email as part of party
+      result = ContactMechHelper.findOrCreatePartyContactMechEmailAddress (
+        ofbizRequest.getLogin()
+      , ofbizRequest.getPassword()
+      , order.getClientPartyId()
+      , order.getBillingEmail()
+      , "PRIMARY_EMAIL"
+      , dispatcher);
+      
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
+      
+      String billingEmailContactMechId = (String) result.get("contactMechId");
+
+      // Create billing location as part of party and attach same billing location to order
+      result = ContactMechHelper.findOrCreatePartyContactMechPostalAddress (
+        ofbizRequest.getLogin()
+      , ofbizRequest.getPassword()
+      , order.getClientPartyId()
+      , order.getBillingLocation()
+      , purposeTypeId
+      , dispatcher);
+      
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
+      
+      String billingLocationContactMechId = (String) result.get("contactMechId");
       
       Map<String, Object> orderRequestMap = UtilMisc.<String, Object>toMap(
           "login.username", ofbizRequest.getLogin()
@@ -80,9 +115,12 @@ public class CreatePanelOrder {
 
       // Add order payment info - presumably where to send invoice
       List<GenericValue> orderPaymentInfo = new LinkedList<GenericValue>();
-//    GenericValue orderContactMech = delegator.makeValue("OrderContactMech", UtilMisc.toMap("contactMechId", "9015", "contactMechPurposeTypeId", "BILLING_LOCATION"));
-//    orderPaymentInfo.add(orderContactMech);
+      
+     GenericValue orderContactMech = delegator.makeValue("OrderContactMech", UtilMisc.toMap("contactMechId", billingLocationContactMechId, "contactMechPurposeTypeId", purposeTypeId));
+     orderPaymentInfo.add(orderContactMech);
 
+     // TODO: Order, invoice email association - and send off...?
+     
       // Add order payment preference hard-coded for now as PAYPAL
       GenericValue orderPaymentPreference = delegator.makeValue(
         "OrderPaymentPreference"
@@ -261,8 +299,6 @@ public class CreatePanelOrder {
       
       //             List<GenericValue> emails = delegator.findByAnd("OrderContactMech", UtilMisc.toMap("orderId", orderId, "contactMechPurposeTypeId", "ORDER_EMAIL"), null, false);
 
-      Map<String, Object> result = null;
-      
       result = dispatcher.runSync("storeOrder", orderRequestMap);
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {

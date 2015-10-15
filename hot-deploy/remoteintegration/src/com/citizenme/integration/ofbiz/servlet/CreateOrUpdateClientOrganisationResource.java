@@ -96,10 +96,11 @@ public class CreateOrUpdateClientOrganisationResource {
         }
       }
   
-      String status = ContactMechHelper.findOrCreatePartyContactMechEmail (ofbizRequest.getLogin(), ofbizRequest.getPassword(), organisation.getPartyId(), organisation.getEmail(), dispatcher);
-      
-      if (status != null)
-        return Response.serverError().entity(status).type("application/json").build();
+      result = ContactMechHelper.findOrCreatePartyContactMechEmailAddress (ofbizRequest.getLogin(), ofbizRequest.getPassword(), organisation.getPartyId(), organisation.getEmail(), "PRIMARY_EMAIL", dispatcher);
+
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
 
       return Response.ok(createResponse(getClass().getName(), true, "OK")).type("application/json").build();
 

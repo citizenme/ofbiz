@@ -63,7 +63,7 @@ public class CreateOrUpdateClientAgentResource {
 
       String serviceName = null;
 
-      Map<String, Object> agentResult = null;
+      Map<String, Object> result = null;
 
       GenericValue partyObject = delegator.findOne("Party", UtilMisc.toMap("partyId", agent.getPartyId()), false);
 
@@ -97,10 +97,10 @@ public class CreateOrUpdateClientAgentResource {
         agentRequestMap.put("login.username", ofbizRequest.getLogin());
         agentRequestMap.put("login.password", ofbizRequest.getPassword());
         
-        agentResult = dispatcher.runSync(serviceName, agentRequestMap);
+        result = dispatcher.runSync(serviceName, agentRequestMap);
 
-        if (ServiceUtil.isError(agentResult) || ServiceUtil.isFailure(agentResult)) {
-          return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(agentResult))).type("application/json").build();
+        if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+          return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
         }
       }
 
@@ -115,20 +115,18 @@ public class CreateOrUpdateClientAgentResource {
       relationshipRequestMap.put("roleTypeIdFrom", "ACCOUNT"); 
       relationshipRequestMap.put("roleTypeIdTo", "CONTACT");
 
-      Map<String, Object> relationshipResult = null;
-
-      relationshipResult = dispatcher.runSync("createUpdatePartyRelationshipAndRoles", relationshipRequestMap);
+      result = dispatcher.runSync("createUpdatePartyRelationshipAndRoles", relationshipRequestMap);
       
-      if (ServiceUtil.isError(relationshipResult) || ServiceUtil.isFailure(relationshipResult)) {
-        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(relationshipResult))).type("application/json").build();
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
 
       // Add Contact Mechanism EMAIL_ADDRESS to client agent
-      String status = ContactMechHelper.findOrCreatePartyContactMechEmail (ofbizRequest.getLogin(), ofbizRequest.getPassword(), agent.getPartyId(), agent.getEmail(), dispatcher);
+      result = ContactMechHelper.findOrCreatePartyContactMechEmailAddress (ofbizRequest.getLogin(), ofbizRequest.getPassword(), agent.getPartyId(), agent.getEmail(), "PRIMARY_EMAIL", dispatcher);
       
-      if (status != null)
-        return Response.serverError().entity(status).type("application/json").build();
-
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
       
       // Check if party is already set-up with relationship CUSTOMER
       GenericValue partyToRole = delegator.findOne("PartyRole", UtilMisc.toMap("partyId", agent.getPartyId(), "roleTypeId", "CUSTOMER"), false);
@@ -139,10 +137,11 @@ public class CreateOrUpdateClientAgentResource {
         createPartyRoleMap.put("login.password", ofbizRequest.getPassword());
         createPartyRoleMap.put("partyId", agent.getPartyId());
         createPartyRoleMap.put("roleTypeId", "CUSTOMER");
-        Map<String, Object> createPartyRoleResult = dispatcher.runSync("createPartyRole", createPartyRoleMap);
+
+        result = dispatcher.runSync("createPartyRole", createPartyRoleMap);
   
-        if (ServiceUtil.isError(createPartyRoleResult) || ServiceUtil.isFailure(createPartyRoleResult)) {
-          return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(relationshipResult))).type("application/json").build();
+        if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+          return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
         }
       }
 
