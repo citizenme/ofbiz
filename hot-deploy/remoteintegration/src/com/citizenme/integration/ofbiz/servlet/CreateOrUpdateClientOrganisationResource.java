@@ -101,7 +101,35 @@ public class CreateOrUpdateClientOrganisationResource {
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
         return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
+      
+      GenericValue partyTaxAuthInfo = delegator.findOne(
+        "PartyTaxAuthInfo"
+      , UtilMisc.toMap(
+        "partyId", organisation.getPartyId()
+      , "taxAuthGeoId", organisation.getTaxAuthorityLocation()
+      , "taxAuthPartyId", "10020" // TODO: UK_HMRC - we need to look this up from config at some point based on the tax authority location
+      , "fromDate", UtilDateTime.toTimestamp(8, 1, 2015, 0, 0, 0) // TODO: For now, just hard code from date for easy perusal - fix later
+        )
+      , false);
+      if (partyTaxAuthInfo == null) {
 
+        Map<String, Object> partyTaxAuthInfoRequestMap = new HashMap<String, Object>();
+        partyTaxAuthInfoRequestMap.put("login.username", ofbizRequest.getLogin());
+        partyTaxAuthInfoRequestMap.put("login.password", ofbizRequest.getPassword());
+        partyTaxAuthInfoRequestMap.put("partyId", organisation.getPartyId());
+        partyTaxAuthInfoRequestMap.put("taxAuthGeoId", organisation.getTaxAuthorityLocation());
+        partyTaxAuthInfoRequestMap.put("taxAuthPartyId", "10020");
+        partyTaxAuthInfoRequestMap.put("fromDate", UtilDateTime.toTimestamp(8, 1, 2015, 0, 0, 0));
+        partyTaxAuthInfoRequestMap.put("partyTaxId", organisation.getVatNumber());
+        partyTaxAuthInfoRequestMap.put("isExempt", organisation.isVatExempt() ? "Y" : "N");
+        
+        result = dispatcher.runSync("createPartyTaxAuthInfo", partyTaxAuthInfoRequestMap);
+
+        if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+          return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        }
+      }
+      
       return Response.ok(createResponse(getClass().getName(), true, "OK")).type("application/json").build();
 
     } catch (GenericEntityException | IOException | GenericServiceException | RuntimeException e) {
