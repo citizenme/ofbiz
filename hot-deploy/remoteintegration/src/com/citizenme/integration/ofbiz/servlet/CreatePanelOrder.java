@@ -29,8 +29,11 @@ import org.ofbiz.service.ServiceContainer;
 import org.ofbiz.service.ServiceUtil;
 
 import com.citizenme.integration.ofbiz.OFBizRequest;
+import com.citizenme.integration.ofbiz.helper.Config;
+import com.citizenme.integration.ofbiz.helper.ConfigHelper;
 import com.citizenme.integration.ofbiz.helper.ContactMechHelper;
 import com.citizenme.integration.ofbiz.helper.RequestHelper;
+import com.citizenme.integration.ofbiz.helper.TaxAuthority;
 import com.citizenme.integration.ofbiz.model.PanelSalesOrder;
 
 import static com.citizenme.integration.ofbiz.helper.RequestHelper.*;
@@ -39,6 +42,8 @@ import static com.citizenme.integration.ofbiz.helper.RequestHelper.*;
 @Path("/createpanelorder")
 public class CreatePanelOrder {
 
+  private static Config config = ConfigHelper.getConfig();
+  
   private static Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
   
   private GenericDelegator delegator = (GenericDelegator) DelegatorFactory.getDelegator("default");
@@ -48,12 +53,10 @@ public class CreatePanelOrder {
     return String.format("%05d", seq);
   }
 
+  
   private final static String BILLING_LOCATION_PURPOSE_TYPE_ID = "BILLING_LOCATION";
   private final static String ORDER_EMAIL_PURPOSE_TYPE_ID = "ORDER_EMAIL";
   private final static String BILLING_EMAIL_PURPOSE_TYPE_ID = "BILLING_EMAIL";
-
-  private final static String ORIGIN_FACILITY_ID = "10000";
-  private final static String PRODUCT_STORE_ID = "10000";
   
   @POST
   @Consumes("application/json")
@@ -106,6 +109,10 @@ public class CreatePanelOrder {
       
       String billingEmailContactMechId = (String) result.get("contactMechId");
 
+      String countryGeoId = order.getBillingLocation().getCountryGeoId();
+      
+      TaxAuthority taxAuthority = config.getTaxAuthorities().get(countryGeoId);
+      
       // Create billing location as part of party and attach same billing location to order
       result = ContactMechHelper.findOrCreatePartyContactMechPostalAddress (
           ofbizRequest.getLogin()
@@ -128,13 +135,13 @@ public class CreatePanelOrder {
         , "partyId", order.getClientOrganisationPartyId()
         , "orderTypeId", "SALES_ORDER"
         , "currencyUom", order.getCurrency()
-        , "productStoreId", PRODUCT_STORE_ID // CitizenMe store
+        , "productStoreId", config.getParameters().get("productStoreId") // CitizenMe store
         , "orderId", order.getOrderId()
         , "placingCustomerPartyId", order.getClientAgentPartyId()
         , "endUserCustomerPartyId", order.getClientOrganisationPartyId()
         , "billToCustomerPartyId", order.getClientOrganisationPartyId()
         , "billFromVendorPartyId", "Company"
-        , "originFacilityId", ORIGIN_FACILITY_ID
+        , "originFacilityId", config.getParameters().get("originFacilityId")
         , "orderName", "" // Just empty name for now
       );
 
@@ -188,7 +195,7 @@ public class CreatePanelOrder {
         , UtilMisc.toMap(
           "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
         , "orderItemTypeId", "PRODUCT_ORDER_ITEM"
-        , "prodCatalogId", "CitizenMe"
+        , "prodCatalogId", config.getParameters().get("prodCatalogId")
         , "productId", "PANEL-ENTRY"
         , "quantity", order.getPaidParticipants()
         , "selectedAmount", BigDecimal.ZERO
@@ -213,17 +220,17 @@ public class CreatePanelOrder {
         orderItemAdjustment = delegator.makeValue(
             "OrderAdjustment"
           , UtilMisc.toMap(
-            "orderAdjustmentTypeId", "SALES_TAX"
+            "orderAdjustmentTypeId", taxAuthority.getOrderAdjustmentTypeId()
           , "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
-          , "overrideGlAccountId", "224301" // VAT COLLECTED UK
+          , "overrideGlAccountId", taxAuthority.getOverrideGlAccountId()
           , "primaryGeoId", "GBR" // Great Britain
           , "shipGroupSeqId", shipGroupSeqId
           , "sourcePercentage", order.getVatPct()
-          , "taxAuthGeoId", "GBR"
-          , "taxAuthPartyId", "10020" // UK_HMRC
+          , "taxAuthGeoId", taxAuthority.getGeoId()
+          , "taxAuthPartyId", taxAuthority.getPartyId()
           , "amount", order.getParticipantUnitFee().multiply(order.getPaidParticipants()).multiply(order.getVatPct()).divide(new BigDecimal(100))
-          , "comments", "UK VAT @ 20%"
-          , "taxAuthorityRateSeqId", "10001"
+          , "comments", taxAuthority.getComments()
+          , "taxAuthorityRateSeqId", taxAuthority.getRateSeqId()
         ));
         orderItemShipGroupInfo.add(orderItemAdjustment);
       }
@@ -238,7 +245,7 @@ public class CreatePanelOrder {
           , UtilMisc.toMap(
             "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
           , "orderItemTypeId", "PRODUCT_ORDER_ITEM"
-          , "prodCatalogId", "CitizenMe"
+          , "prodCatalogId", config.getParameters().get("prodCatalogId")
           , "productId", "PANEL-FEE"
           , "quantity", BigDecimal.ONE
           , "selectedAmount", BigDecimal.ZERO
@@ -263,17 +270,17 @@ public class CreatePanelOrder {
           orderItemAdjustment = delegator.makeValue(
               "OrderAdjustment"
             , UtilMisc.toMap(
-              "orderAdjustmentTypeId", "SALES_TAX"
+              "orderAdjustmentTypeId", taxAuthority.getOrderAdjustmentTypeId()
             , "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
-            , "overrideGlAccountId", "224301" // VAT COLLECTED UK
+            , "overrideGlAccountId", taxAuthority.getOverrideGlAccountId()
             , "primaryGeoId", "GBR" // Great Britain
             , "shipGroupSeqId", shipGroupSeqId
             , "sourcePercentage", order.getVatPct()
-            , "taxAuthGeoId", "GBR"
-            , "taxAuthPartyId", "10020" // UK_HMRC
+            , "taxAuthGeoId", taxAuthority.getGeoId()
+            , "taxAuthPartyId", taxAuthority.getPartyId()
             , "amount", order.getPanelFee().multiply(order.getVatPct()).divide(new BigDecimal(100))
-            , "comments", "UK VAT @ 20%"
-            , "taxAuthorityRateSeqId", "10001"
+            , "comments", taxAuthority.getComments()
+            , "taxAuthorityRateSeqId", taxAuthority.getRateSeqId()
           ));
           orderItemShipGroupInfo.add(orderItemAdjustment);
         }
@@ -287,7 +294,7 @@ public class CreatePanelOrder {
         , UtilMisc.toMap(
           "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
         , "orderItemTypeId", "PRODUCT_ORDER_ITEM"
-        , "prodCatalogId", "CitizenMe"
+        , "prodCatalogId", config.getParameters().get("prodCatalogId")
         , "productId", "TRANS-FEE"
         , "quantity", BigDecimal.ONE
         , "selectedAmount", BigDecimal.ZERO
@@ -312,17 +319,17 @@ public class CreatePanelOrder {
         orderItemAdjustment = delegator.makeValue(
           "OrderAdjustment"
         , UtilMisc.toMap(
-            "orderAdjustmentTypeId", "SALES_TAX"
+            "orderAdjustmentTypeId", taxAuthority.getOrderAdjustmentTypeId()
           , "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
-          , "overrideGlAccountId", "224301" // VAT COLLECTED UK
+          , "overrideGlAccountId", taxAuthority.getOverrideGlAccountId()
           , "primaryGeoId", "GBR" // Great Britain
           , "shipGroupSeqId", shipGroupSeqId
           , "sourcePercentage", order.getVatPct()
-          , "taxAuthGeoId", "GBR"
-          , "taxAuthPartyId", "10020" // UK_HMRC
+          , "taxAuthGeoId", taxAuthority.getGeoId()
+          , "taxAuthPartyId", taxAuthority.getPartyId()
           , "amount", order.getTransactionFee().multiply(order.getVatPct()).divide(new BigDecimal(100))
-          , "comments", "UK VAT @ 20%"
-          , "taxAuthorityRateSeqId", "10001"
+          , "comments", taxAuthority.getComments()
+          , "taxAuthorityRateSeqId", taxAuthority.getRateSeqId()
         ));
         orderItemShipGroupInfo.add(orderItemAdjustment);
       }
