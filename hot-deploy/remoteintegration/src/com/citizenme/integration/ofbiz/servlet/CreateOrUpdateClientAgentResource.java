@@ -27,6 +27,8 @@ import org.ofbiz.service.ServiceContainer;
 import org.ofbiz.service.ServiceUtil;
 
 import com.citizenme.integration.ofbiz.OFBizRequest;
+import com.citizenme.integration.ofbiz.helper.Config;
+import com.citizenme.integration.ofbiz.helper.ConfigHelper;
 import com.citizenme.integration.ofbiz.helper.ContactMechHelper;
 import com.citizenme.integration.ofbiz.helper.RequestHelper;
 import com.citizenme.integration.ofbiz.model.ClientAgent;
@@ -36,6 +38,8 @@ import static com.citizenme.integration.ofbiz.helper.RequestHelper.*;
 
 @Path("/createorupdateclientagent")
 public class CreateOrUpdateClientAgentResource {
+
+  private static Config config = ConfigHelper.getConfig();
 
   private static Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
   
