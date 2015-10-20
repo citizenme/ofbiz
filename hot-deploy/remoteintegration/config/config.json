@@ -1,0 +1,17 @@
+{
+  "parameters": {
+    "productStoreId": "10000",
+    "originFacilityId": "10000",
+    "prodCatalogId": "CitizenMe"
+  },
+  "taxAuthorities": {
+    "GBR": {
+      "partyId": "10020",
+      "geoId": "GBR",
+      "overrideGlAccountId": "224301",
+      "comments": "UK VAT @ 20%",
+      "rateSeqId": "10001",
+      "orderAdjustmentTypeId": "SALES_TAX"
+    }
+  }
+}
