@@ -77,6 +77,10 @@ public class CreatePanelOrder {
       
       PanelSalesOrder order = (PanelSalesOrder) ofbizRequest.getRequestParameter();
 
+      String countryGeoId = order.getBillingLocation().getCountryGeoId();
+      
+      TaxAuthority taxAuthority = config.getTaxAuthorities().get(countryGeoId);
+
       // Create order/billing email as part of client organisation
       result = ContactMechHelper.findOrCreatePartyContactMechEmailAddress (
           ofbizRequest.getLogin()
@@ -109,10 +113,6 @@ public class CreatePanelOrder {
       
       String billingEmailContactMechId = (String) result.get("contactMechId");
 
-      String countryGeoId = order.getBillingLocation().getCountryGeoId();
-      
-      TaxAuthority taxAuthority = config.getTaxAuthorities().get(countryGeoId);
-      
       // Create billing location as part of party and attach same billing location to order
       result = ContactMechHelper.findOrCreatePartyContactMechPostalAddress (
           ofbizRequest.getLogin()
@@ -223,7 +223,7 @@ public class CreatePanelOrder {
             "orderAdjustmentTypeId", taxAuthority.getOrderAdjustmentTypeId()
           , "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
           , "overrideGlAccountId", taxAuthority.getOverrideGlAccountId()
-          , "primaryGeoId", "GBR" // Great Britain
+          , "primaryGeoId", taxAuthority.getGeoId()
           , "shipGroupSeqId", shipGroupSeqId
           , "sourcePercentage", order.getVatPct()
           , "taxAuthGeoId", taxAuthority.getGeoId()
@@ -273,7 +273,7 @@ public class CreatePanelOrder {
               "orderAdjustmentTypeId", taxAuthority.getOrderAdjustmentTypeId()
             , "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
             , "overrideGlAccountId", taxAuthority.getOverrideGlAccountId()
-            , "primaryGeoId", "GBR" // Great Britain
+            , "primaryGeoId", taxAuthority.getGeoId()
             , "shipGroupSeqId", shipGroupSeqId
             , "sourcePercentage", order.getVatPct()
             , "taxAuthGeoId", taxAuthority.getGeoId()
@@ -322,7 +322,7 @@ public class CreatePanelOrder {
             "orderAdjustmentTypeId", taxAuthority.getOrderAdjustmentTypeId()
           , "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
           , "overrideGlAccountId", taxAuthority.getOverrideGlAccountId()
-          , "primaryGeoId", "GBR" // Great Britain
+          , "primaryGeoId", taxAuthority.getGeoId()
           , "shipGroupSeqId", shipGroupSeqId
           , "sourcePercentage", order.getVatPct()
           , "taxAuthGeoId", taxAuthority.getGeoId()

@@ -3,7 +3,6 @@ package com.citizenme.integration.ofbiz.servlet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,7 +20,6 @@ import org.ofbiz.base.util.UtilDateTime;
 import org.ofbiz.base.util.UtilMisc;
 import org.ofbiz.entity.DelegatorFactory;
 import org.ofbiz.entity.GenericDelegator;
-import org.ofbiz.entity.GenericEntity;
 import org.ofbiz.entity.GenericEntityException;
 import org.ofbiz.entity.GenericValue;
 import org.ofbiz.service.GenericServiceException;
@@ -30,17 +28,20 @@ import org.ofbiz.service.ServiceContainer;
 import org.ofbiz.service.ServiceUtil;
 
 import com.citizenme.integration.ofbiz.OFBizRequest;
+import com.citizenme.integration.ofbiz.helper.Config;
+import com.citizenme.integration.ofbiz.helper.ConfigHelper;
 import com.citizenme.integration.ofbiz.helper.ContactMechHelper;
 import com.citizenme.integration.ofbiz.helper.RequestHelper;
+import com.citizenme.integration.ofbiz.helper.TaxAuthority;
 import com.citizenme.integration.ofbiz.model.ClientOrganisation;
-
-import javolution.util.FastMap;
 
 import static com.citizenme.integration.ofbiz.helper.RequestHelper.*;
 
 
 @Path("/createorupdateclientorganisation")
 public class CreateOrUpdateClientOrganisationResource {
+
+  private static Config config = ConfigHelper.getConfig();
 
   private static Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
   
@@ -63,7 +64,11 @@ public class CreateOrUpdateClientOrganisationResource {
         throw new RuntimeException("Invalid input: " + constraintViolations.toString());
       
       ClientOrganisation organisation = (ClientOrganisation) ofbizRequest.getRequestParameter();
-      
+
+      String countryGeoId = organisation.getTaxAuthorityLocation();
+
+      TaxAuthority taxAuthority = config.getTaxAuthorities().get(countryGeoId);
+
       Map<String, Object> organisationRequestMap = new HashMap<String, Object>();
 
       String serviceName = null;
@@ -106,8 +111,8 @@ public class CreateOrUpdateClientOrganisationResource {
         "PartyTaxAuthInfo"
       , UtilMisc.toMap(
         "partyId", organisation.getPartyId()
-      , "taxAuthGeoId", organisation.getTaxAuthorityLocation()
-      , "taxAuthPartyId", "10020" // TODO: UK_HMRC - we need to look this up from config at some point based on the tax authority location
+      , "taxAuthGeoId", taxAuthority.getGeoId()
+      , "taxAuthPartyId", taxAuthority.getPartyId()
       , "fromDate", UtilDateTime.toTimestamp(8, 1, 2015, 0, 0, 0) // TODO: For now, just hard code from date for easy perusal - fix later
         )
       , false);
@@ -117,8 +122,8 @@ public class CreateOrUpdateClientOrganisationResource {
         partyTaxAuthInfoRequestMap.put("login.username", ofbizRequest.getLogin());
         partyTaxAuthInfoRequestMap.put("login.password", ofbizRequest.getPassword());
         partyTaxAuthInfoRequestMap.put("partyId", organisation.getPartyId());
-        partyTaxAuthInfoRequestMap.put("taxAuthGeoId", organisation.getTaxAuthorityLocation());
-        partyTaxAuthInfoRequestMap.put("taxAuthPartyId", "10020");
+        partyTaxAuthInfoRequestMap.put("taxAuthGeoId", taxAuthority.getGeoId());
+        partyTaxAuthInfoRequestMap.put("taxAuthPartyId", taxAuthority.getPartyId());
         partyTaxAuthInfoRequestMap.put("fromDate", UtilDateTime.toTimestamp(8, 1, 2015, 0, 0, 0));
         partyTaxAuthInfoRequestMap.put("partyTaxId", organisation.getVatNumber());
         partyTaxAuthInfoRequestMap.put("isExempt", organisation.isVatExempt() ? "Y" : "N");
