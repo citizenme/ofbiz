@@ -54,7 +54,6 @@ import org.ofbiz.entity.GenericValue;
 import org.ofbiz.entity.condition.EntityCondition;
 import org.ofbiz.entity.condition.EntityOperator;
 import org.ofbiz.entity.util.EntityUtil;
-import org.ofbiz.order.shoppingcart.ShoppingCart.ProductPromoUseInfo;
 import org.ofbiz.order.shoppingcart.product.ProductPromoWorker;
 import org.ofbiz.product.catalog.CatalogWorker;
 import org.ofbiz.product.config.ProductConfigWorker;
@@ -651,11 +650,19 @@ public class ShoppingCartEvents {
         if (UtilValidate.isNotEmpty(itemId)) {
             request.setAttribute("itemId", itemId);
         }
-        for (int shipGroupIndex = 0; shipGroupIndex < cart.getShipGroupSize(); shipGroupIndex++) {
-            String shipContactMechId = cart.getShippingContactMechId(shipGroupIndex);
-            if (UtilValidate.isNotEmpty(shipContactMechId)) {
-                cart.setShipmentMethodTypeId(shipGroupIndex, null);
+        try {
+            GenericValue product = delegator.findOne("Product", UtilMisc.toMap("productId", productId), false); 
+            //Reset shipment method information in cart only if shipping applies on product.
+            if (ProductWorker.shippingApplies(product)) {
+                for (int shipGroupIndex = 0; shipGroupIndex < cart.getShipGroupSize(); shipGroupIndex++) {
+                    String shipContactMechId = cart.getShippingContactMechId(shipGroupIndex);
+                    if (UtilValidate.isNotEmpty(shipContactMechId)) {
+                        cart.setShipmentMethodTypeId(shipGroupIndex, null);
+                    }
+                }
             }
+        } catch (GenericEntityException e) {
+            Debug.logError(e, "Error getting product"+e.getMessage(), module);
         }
         // Determine where to send the browser
         if (controlDirective.equals(ERROR)) {
@@ -915,13 +922,13 @@ public class ShoppingCartEvents {
         HttpSession session = request.getSession();
         GenericValue userLogin = (GenericValue) session.getAttribute("userLogin");
         if (userLogin != null && "anonymous".equals(userLogin.get("userLoginId"))) {
-        	Locale locale = UtilHttp.getLocale(session);
-        	
+            Locale locale = UtilHttp.getLocale(session);
+            
             // here we want to do a full logout, but not using the normal logout stuff because it saves things in the UserLogin record that we don't want changed for the anonymous user
             session.invalidate();
             session = request.getSession(true);
             if (null != locale) {
-            	UtilHttp.setLocale(session, locale);
+                UtilHttp.setLocale(session, locale);
             }
 
             // to allow the display of the order confirmation page put the userLogin in the request, but leave it out of the session
