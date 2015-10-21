@@ -110,7 +110,7 @@ public class CreateOrUpdateClientAgentResource {
 
         if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
           TransactionUtil.rollback();
-          return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+          return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
         }
       }
 
@@ -129,7 +129,7 @@ public class CreateOrUpdateClientAgentResource {
       
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
         TransactionUtil.rollback();
-        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
 
       // Add Contact Mechanism EMAIL_ADDRESS to client agent
@@ -137,7 +137,7 @@ public class CreateOrUpdateClientAgentResource {
       
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
         TransactionUtil.rollback();
-        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
       
       // Check if party is already set-up with relationship CUSTOMER
@@ -154,18 +154,18 @@ public class CreateOrUpdateClientAgentResource {
   
         if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
           TransactionUtil.rollback();
-          return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+          return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
         }
       }
 
       TransactionUtil.commit();
       
-      return Response.ok(createResponse(getClass().getName(), true, "OK")).type("application/json").build();
+      return Response.ok(createOFBizResponseString(getClass().getName(), true, "OK")).type("application/json").build();
 
     } catch (GenericEntityException | IOException | GenericServiceException | RuntimeException e) {
       Debug.logError(e, getClass().getName());
       TransactionUtil.rollback(e);
-      return Response.serverError().entity(createResponse(getClass().getName(), false, e.toString())).build();
+      return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, e.toString())).build();
     }
   }
 }

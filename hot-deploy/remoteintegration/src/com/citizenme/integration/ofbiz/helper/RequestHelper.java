@@ -8,6 +8,7 @@ import java.util.TreeMap;
 import org.ofbiz.base.util.Debug;
 
 import com.citizenme.integration.ofbiz.OFBizRequest;
+import com.citizenme.integration.ofbiz.OFBizResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,32 +32,32 @@ public class RequestHelper {
     return om.readValue(is, OFBizRequest.class);
   }
   
-  public static Map<String, Object> createResponseMap(String operation, boolean status, String message) {
+  public static OFBizResponse createOFBizResponse(String operation, boolean status, String message) {
 
-    Map<String, Object> response = new TreeMap<String, Object>();
+    OFBizResponse response = new OFBizResponse();
 
-    response.put("operation", operation);
-    response.put("status", status);
-    response.put("message", message);
+    response.setOperation(operation);
+    response.setStatus(status);
+    response.setMessage(message);
 
     return response;
   }
 
-  public static String createResponse(String operation, boolean status, String message) {
+  public static String createOFBizResponseString(String operation, boolean status, String message) {
     
     try {
-      return om.writeValueAsString(createResponseMap(operation, status, message));
+      return om.writeValueAsString(createOFBizResponse(operation, status, message));
     } catch (JsonProcessingException e) {
       Debug.log(e);
       return "";
     }
   }
 
-  public static String createResponse(String operation, boolean status, String message, String requestId) {
+  public static String createOFBizResponseString(String operation, boolean status, String message, String requestId) {
     
     try {
-      Map<String, Object> response = createResponseMap(operation, status, message);
-      response.put("X-Request-Id", requestId);
+      OFBizResponse response = createOFBizResponse(operation, status, message);
+      response.setRequestId(requestId);
       return om.writeValueAsString(response);
     
     } catch (JsonProcessingException e) {
@@ -66,18 +67,18 @@ public class RequestHelper {
     }
   }
   
-  public static String createResponse(String operation, boolean status, String message, String requestId, Object values) {
-    
-    try {
-      Map<String, Object> response = createResponseMap(operation, status, message);
-      response.put("X-Request-Id", requestId);
-      response.put("values", values);
-      return om.writeValueAsString(response);
-    } catch (JsonProcessingException e) {
-      Debug.log(e);
-      return "";
-    }
-  }
+//  public static String createOFBizResponseString(String operation, boolean status, String message, String requestId, Object values) {
+//    
+//    try {
+//      Map<String, Object> response = createOFBizResponse(operation, status, message);
+//      response.put("X-Request-Id", requestId);
+//      response.put("values", values);
+//      return om.writeValueAsString(response);
+//    } catch (JsonProcessingException e) {
+//      Debug.log(e);
+//      return "";
+//    }
+//  }
   
   public static String toJson(Object o) {
     
