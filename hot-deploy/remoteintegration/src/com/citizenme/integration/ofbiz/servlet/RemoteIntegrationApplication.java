@@ -12,7 +12,7 @@ public class RemoteIntegrationApplication extends Application {
       Set<Class<?>> classes = new HashSet<Class<?>>();
       classes.add(CreateOrUpdateClientOrganisationResource.class);
       classes.add(CreateOrUpdateClientAgentResource.class);
-      classes.add(CreatePanelOrder.class);
+      classes.add(CreatePanelSalesOrderResource.class);
       return classes;
   }  
 }
