@@ -22,6 +22,8 @@ import org.ofbiz.entity.DelegatorFactory;
 import org.ofbiz.entity.GenericDelegator;
 import org.ofbiz.entity.GenericEntityException;
 import org.ofbiz.entity.GenericValue;
+import org.ofbiz.entity.transaction.GenericTransactionException;
+import org.ofbiz.entity.transaction.TransactionUtil;
 import org.ofbiz.service.GenericServiceException;
 import org.ofbiz.service.LocalDispatcher;
 import org.ofbiz.service.ServiceContainer;
@@ -53,7 +55,7 @@ public class CreateOrUpdateClientOrganisationResource {
   @Produces("application/json")
   //@Path("{partyId}")
   //@PathParam("partyId") String partyId,
-  public Response execute(InputStream requestBodyStream) {
+  public Response execute(InputStream requestBodyStream) throws GenericTransactionException {
     
     try {
       OFBizRequest ofbizRequest = RequestHelper.deserializeOFBizRequest(requestBodyStream);
@@ -75,6 +77,9 @@ public class CreateOrUpdateClientOrganisationResource {
       
       Map<String, Object> result = null;
       
+      if (TransactionUtil.begin() == false)
+        throw new RuntimeException("Transaction is already unexpectedly started");
+
       GenericValue partyObject = delegator.findOne("PartyNameView", UtilMisc.toMap("partyId", organisation.getPartyId()), false);
       if (partyObject == null) {
         serviceName = "createPartyGroup";
@@ -97,14 +102,16 @@ public class CreateOrUpdateClientOrganisationResource {
         result = dispatcher.runSync(serviceName, organisationRequestMap);
 
         if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-          return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+          TransactionUtil.rollback();
+          return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
         }
       }
   
       result = ContactMechHelper.findOrCreatePartyContactMechEmailAddress (ofbizRequest.getLogin(), ofbizRequest.getPassword(), organisation.getPartyId(), organisation.getEmail(), "PRIMARY_EMAIL", dispatcher);
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
       
       GenericValue partyTaxAuthInfo = delegator.findOne(
@@ -131,15 +138,19 @@ public class CreateOrUpdateClientOrganisationResource {
         result = dispatcher.runSync("createPartyTaxAuthInfo", partyTaxAuthInfoRequestMap);
 
         if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-          return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+          TransactionUtil.rollback();
+          return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
         }
       }
       
-      return Response.ok(createResponse(getClass().getName(), true, "OK")).type("application/json").build();
+      TransactionUtil.commit();
+
+      return Response.ok(createOFBizResponseString(getClass().getName(), true, "OK")).type("application/json").build();
 
     } catch (GenericEntityException | IOException | GenericServiceException | RuntimeException e) {
       Debug.logError(e, getClass().getName());
-      return Response.serverError().entity(createResponse(getClass().getName(), false, e.toString())).build();
+      TransactionUtil.rollback(e);
+      return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, e.toString())).build();
     }
   }
 }

@@ -23,6 +23,8 @@ import org.ofbiz.base.util.UtilMisc;
 import org.ofbiz.entity.DelegatorFactory;
 import org.ofbiz.entity.GenericDelegator;
 import org.ofbiz.entity.GenericValue;
+import org.ofbiz.entity.transaction.GenericTransactionException;
+import org.ofbiz.entity.transaction.TransactionUtil;
 import org.ofbiz.service.GenericServiceException;
 import org.ofbiz.service.LocalDispatcher;
 import org.ofbiz.service.ServiceContainer;
@@ -39,8 +41,8 @@ import com.citizenme.integration.ofbiz.model.PanelSalesOrder;
 import static com.citizenme.integration.ofbiz.helper.RequestHelper.*;
 
 
-@Path("/createpanelorder")
-public class CreatePanelOrder {
+@Path("/createpanelsalesorder")
+public class CreatePanelSalesOrderResource {
 
   private static Config config = ConfigHelper.getConfig();
   
@@ -63,7 +65,7 @@ public class CreatePanelOrder {
   @Produces("application/json")
   //@Path("{partyId}")
   //@PathParam("partyId") String partyId,
-  public Response execute(InputStream requestBodyStream) {
+  public Response execute(InputStream requestBodyStream) throws GenericTransactionException {
     
     Map<String, Object> result = null;
 
@@ -81,6 +83,9 @@ public class CreatePanelOrder {
       
       TaxAuthority taxAuthority = config.getTaxAuthorities().get(countryGeoId);
 
+      if (TransactionUtil.begin() == false)
+        throw new RuntimeException("Transaction is already unexpectedly started");
+      
       // Create order/billing email as part of client organisation
       result = ContactMechHelper.findOrCreatePartyContactMechEmailAddress (
           ofbizRequest.getLogin()
@@ -92,7 +97,8 @@ public class CreatePanelOrder {
       );
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
 
       String orderEmailContactMechId = (String) result.get("contactMechId");
@@ -108,7 +114,8 @@ public class CreatePanelOrder {
       );
       
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
       
       String billingEmailContactMechId = (String) result.get("contactMechId");
@@ -124,7 +131,8 @@ public class CreatePanelOrder {
       );
       
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
       
       String billingLocationContactMechId = (String) result.get("contactMechId");
@@ -348,7 +356,8 @@ public class CreatePanelOrder {
       result = dispatcher.runSync("storeOrder", orderRequestMap);
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
 
       Map<String, Object> invoiceRequestMap = new HashMap<String, Object>();
@@ -359,14 +368,18 @@ public class CreatePanelOrder {
       result = dispatcher.runSync("createInvoiceForOrderAllItems", invoiceRequestMap);
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-        return Response.serverError().entity(createResponse(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
       
-      return Response.ok(createResponse(getClass().getName(), true, "OK")).type("application/json").build();
+      TransactionUtil.commit();
+      
+      return Response.ok(createOFBizResponseString(getClass().getName(), true, "OK")).type("application/json").build();
 
     } catch (IOException | RuntimeException | GenericServiceException e) {
       Debug.logError(e, getClass().getName());
-      return Response.serverError().entity(createResponse(getClass().getName(), false, e.toString())).build();
+      TransactionUtil.rollback(e);
+      return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, e.toString())).build();
     }
   }
 }
