@@ -31,6 +31,8 @@
         <fileset dir="../../framework/widget/build/lib" includes="*.jar"/>
         <fileset dir="../../framework/webapp/lib" includes="*.jar"/>
         <fileset dir="../../framework/webapp/build/lib" includes="*.jar"/>
+	<!-- our custom dependencies -->
+        <fileset dir="../../applications/order/build/lib" includes="ofbiz-order.jar"/>
     </path>
 
     <!-- ================================================================= -->

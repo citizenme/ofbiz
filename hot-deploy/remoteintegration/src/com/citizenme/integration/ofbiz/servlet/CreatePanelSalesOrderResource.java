@@ -22,9 +22,11 @@ import org.ofbiz.base.util.Debug;
 import org.ofbiz.base.util.UtilMisc;
 import org.ofbiz.entity.DelegatorFactory;
 import org.ofbiz.entity.GenericDelegator;
+import org.ofbiz.entity.GenericEntityException;
 import org.ofbiz.entity.GenericValue;
 import org.ofbiz.entity.transaction.GenericTransactionException;
 import org.ofbiz.entity.transaction.TransactionUtil;
+import org.ofbiz.order.order.OrderChangeHelper;
 import org.ofbiz.service.GenericServiceException;
 import org.ofbiz.service.LocalDispatcher;
 import org.ofbiz.service.ServiceContainer;
@@ -85,7 +87,7 @@ public class CreatePanelSalesOrderResource {
 
       if (TransactionUtil.begin() == false)
         throw new RuntimeException("Transaction is already unexpectedly started");
-      
+
       // Create order/billing email as part of client organisation
       result = ContactMechHelper.findOrCreatePartyContactMechEmailAddress (
           ofbizRequest.getLogin()
@@ -170,6 +172,7 @@ public class CreatePanelSalesOrderResource {
           "OrderPaymentPreference"
         , UtilMisc.toMap(
             "paymentMethodTypeId", "EXT_PAYPAL"
+          , "maxAmount", order.getOrderTotal()
       ));
 
       orderPaymentInfo.add(orderPaymentPreference);
@@ -360,23 +363,11 @@ public class CreatePanelSalesOrderResource {
         return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
 
-      Map<String, Object> invoiceRequestMap = new HashMap<String, Object>();
-      invoiceRequestMap.put("login.username", ofbizRequest.getLogin());
-      invoiceRequestMap.put("login.password", ofbizRequest.getPassword());
-      invoiceRequestMap.put("orderId", order.getOrderId());
-
-      result = dispatcher.runSync("createInvoiceForOrderAllItems", invoiceRequestMap);
-
-      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-        TransactionUtil.rollback();
-        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
-      }
-      
       TransactionUtil.commit();
       
       return Response.ok(createOFBizResponseString(getClass().getName(), true, "OK")).type("application/json").build();
 
-    } catch (IOException | RuntimeException | GenericServiceException e) {
+    } catch (IOException | RuntimeException | GenericServiceException | GenericEntityException e) {
       Debug.logError(e, getClass().getName());
       TransactionUtil.rollback(e);
       return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, e.toString())).build();
