@@ -43,7 +43,7 @@ import static com.citizenme.integration.ofbiz.helper.RequestHelper.*;
  * 
  */
 
-@Path("/receivepanelsalesorderpayment")
+@Path("/receivesalesorderpayment")
 public class ReceiveSalesOrderPayment {
 
   private static Config config = ConfigHelper.getConfig();
