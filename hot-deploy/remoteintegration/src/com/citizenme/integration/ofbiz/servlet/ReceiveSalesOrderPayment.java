@@ -85,6 +85,9 @@ public class ReceiveSalesOrderPayment {
       // get the order header & payment preferences
       GenericValue orderHeader = delegator.findOne("OrderHeader", UtilMisc.toMap("orderId", paymentReceipt.getOrderId()), false);
 
+      if (orderHeader == null)
+        throw new RuntimeException("Order does not exist");
+      
       BigDecimal grandTotal = orderHeader.getBigDecimal("grandTotal");
       
       if (grandTotal.compareTo(paymentReceipt.getAmount()) > 0)
@@ -109,6 +112,10 @@ public class ReceiveSalesOrderPayment {
         throw new RuntimeException("Order payment preferences not correctly setup");
       
       GenericValue paymentPreference = paymentPreferences.get(0);
+      
+      if ("PAYMENT_RECEIVED".equals(paymentPreference.getString("statusId")))
+        throw new RuntimeException("Order is already paid for");
+      
       paymentPreference.set("statusId", "PAYMENT_RECEIVED");
       delegator.store(paymentPreference);
       
