@@ -25,4 +25,11 @@ public class Config {
     this.taxAuthorities = taxAuthorities;
   }
   
+  public Object getParameter(String name) {
+    return parameters.get(name);
+  }
+  
+  public TaxAuthority getTaxAuthority(String name) {
+    return taxAuthorities.get(name);
+  }
 }

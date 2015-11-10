@@ -3,9 +3,12 @@ package com.citizenme.integration.ofbiz.servlet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -145,6 +148,44 @@ public class ReceiveSalesOrderPayment {
 //        TransactionUtil.rollback();
 //        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
 //      }
+
+      // Find single invoice id - or fail - it's unexpected and not safe to proceed with multiples 
+      // as we expect only a single payment for the full order
+      List<GenericValue> orderItemBillings = delegator.findByAnd("OrderItemBilling", UtilMisc.toMap("orderId", paymentReceipt.getOrderId()));
+      Set<String> invoiceIds = new HashSet<String>();
+      for (GenericValue orderItemBilling : orderItemBillings) {
+        invoiceIds.add(orderItemBilling.getString("invoiceId"));
+      }
+
+      if (invoiceIds.size() != 1)
+        throw new RuntimeException("Unexpected number of invoices for order (there should be only 1): " + invoiceIds.size());
+      
+      // Now email the invoice
+      Locale locale = new Locale((String) config.getParameter("locale"));
+
+      Map<String, Object> bodyParameters = UtilMisc.<String, Object>toMap(
+          "invoiceId", invoiceIds.toArray()[0]
+        , "userLogin", userLogin
+        , "locale", locale);
+
+      Map<String, Object> sendMap = UtilMisc.<String, Object>toMap(
+        "sendFrom", (String) config.getParameter("invoiceEmailFrom")
+      , "sendTo", paymentReceipt.getInvoiceEmail()
+      , "xslfoAttachScreenLocation", "component://accounting/widget/AccountingPrintScreens.xml#InvoicePDF"
+      , "subject", String.format((String) config.getParameter("invoiceEmailSubject"), paymentReceipt.getOrderId())
+      , "bodyText", (String) config.getParameter("invoiceEmailBodyText")
+      , "timeZone",  TimeZone.getTimeZone((String) config.getParameter("timeZone"))
+      , "locale", locale
+      , "userLogin", userLogin
+      , "bodyParameters", bodyParameters
+      );
+      
+      result = dispatcher.runSync("sendMailFromScreen", sendMap);
+      
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
       
       TransactionUtil.commit();
       
