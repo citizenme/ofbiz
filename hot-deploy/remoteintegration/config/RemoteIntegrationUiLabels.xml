@@ -2,18 +2,20 @@
 <resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <property key="RemoteIntegrationApplication">
         <value xml:lang="en">RemoteIntegration Application</value>
-        <value xml:lang="zh">RemoteIntegration应用程序</value>
     </property>
     <property key="RemoteIntegrationCompanyName">
-        <value xml:lang="en">OFBiz: RemoteIntegration</value>
+        <value xml:lang="en">CitizenMe</value>
     </property>
     <property key="RemoteIntegrationCompanySubtitle">
-        <value xml:lang="en">Part of the Open For Business Family of Open Source Software</value>
-        <value xml:lang="it">Un modulo della famiglia di software open source Open For Business</value>
-        <value xml:lang="zh">开源软件OFBiz的组成部分</value>
+        <value xml:lang="en">Value your data</value>
     </property>
     <property key="RemoteIntegrationViewPermissionError">
         <value xml:lang="en">You are not allowed to view this page.</value>
-        <value xml:lang="zh">不允许你浏览这个页面。</value>
+    </property>
+    <property key="RemoteIntegrationNbr">
+        <value xml:lang="en">Number</value>
+    </property>
+    <property key="RemoteIntegrationCompanyRegNo">
+        <value xml:lang="en">Reg.Nr:</value>
     </property>
 </resource>
