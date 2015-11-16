@@ -6,8 +6,10 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -88,6 +90,10 @@ public class CreatePanelSalesOrderResource {
       if (TransactionUtil.begin() == false)
         throw new RuntimeException("Transaction is already unexpectedly started");
 
+      // First, get userLogin for those calls that require it
+//      GenericValue userLogin = delegator.findOne("UserLogin", UtilMisc.toMap("userLoginId", "system"), true);
+      GenericValue userLogin = delegator.findOne("UserLogin", UtilMisc.toMap("userLoginId", ofbizRequest.getLogin()), true);
+      
       // Create order/billing email as part of client organisation
       result = ContactMechHelper.findOrCreatePartyContactMechEmailAddress (
           ofbizRequest.getLogin()
@@ -153,6 +159,7 @@ public class CreatePanelSalesOrderResource {
         , "billFromVendorPartyId", "Company"
         , "originFacilityId", config.getParameters().get("originFacilityId")
         , "orderName", "" // Just empty name for now
+        , "webSiteId", "OrderEntry" // Required in order to later send order notifications?!?!
       );
 
       // Add order payment info
@@ -363,8 +370,38 @@ public class CreatePanelSalesOrderResource {
         return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
 
+//      // Now email the invoice
+//      Locale locale = new Locale((String) config.getParameter("locale"));
+//
+//      Map<String, Object> bodyParameters = UtilMisc.<String, Object>toMap(
+//          "orderId", order.getOrderId()
+//        , "userLogin", userLogin
+//        , "locale", locale);
+//
+//      Map<String, Object> sendMap = UtilMisc.<String, Object>toMap(
+//        "sendFrom", (String) config.getParameter("invoiceEmailFrom")
+//      , "sendTo", "morten@citizenme.com"
+//      , "bodyScreenUri", "component://ecommerce/widget/EmailOrderScreens.xml#OrderConfirmNotice"
+//      , "subject", String.format((String) config.getParameter("invoiceEmailSubject"), order.getOrderId())
+//      , "bodyText", (String) config.getParameter("invoiceEmailBodyText")
+//      , "timeZone",  TimeZone.getTimeZone((String) config.getParameter("timeZone"))
+//      , "locale", locale
+//      , "userLogin", userLogin
+//      , "bodyParameters", bodyParameters
+//      , "contentType", "text/html" 
+//      );
+
+//    result = dispatcher.runSync("sendMail", sendMap);
+//    if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+//      TransactionUtil.rollback();
+//      return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+//    }
+
+      // Don't let notification email below fail transaction - opportunistic best-effort email only ;-)
       TransactionUtil.commit();
-      
+
+      dispatcher.runAsync("sendOrderConfirmation", UtilMisc.toMap("orderId", order.getOrderId(), "userLogin", userLogin, "temporaryAnonymousUserLogin", userLogin));
+
       return Response.ok(createOFBizResponseString(getClass().getName(), true, "OK")).type("application/json").build();
 
     } catch (IOException | RuntimeException | GenericServiceException | GenericEntityException e) {

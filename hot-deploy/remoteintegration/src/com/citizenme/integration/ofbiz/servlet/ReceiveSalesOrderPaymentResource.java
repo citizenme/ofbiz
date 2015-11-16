@@ -47,7 +47,7 @@ import static com.citizenme.integration.ofbiz.helper.RequestHelper.*;
  */
 
 @Path("/receivesalesorderpayment")
-public class ReceiveSalesOrderPayment {
+public class ReceiveSalesOrderPaymentResource {
 
   private static Config config = ConfigHelper.getConfig();
   
@@ -163,16 +163,18 @@ public class ReceiveSalesOrderPayment {
       // Now email the invoice
       Locale locale = new Locale((String) config.getParameter("locale"));
 
+      String invoiceId = (String) invoiceIds.toArray()[0];
+      
       Map<String, Object> bodyParameters = UtilMisc.<String, Object>toMap(
-          "invoiceId", invoiceIds.toArray()[0]
+          "invoiceId", invoiceId
         , "userLogin", userLogin
         , "locale", locale);
 
       Map<String, Object> sendMap = UtilMisc.<String, Object>toMap(
         "sendFrom", (String) config.getParameter("invoiceEmailFrom")
       , "sendTo", paymentReceipt.getInvoiceEmail()
-      , "xslfoAttachScreenLocation", "component://accounting/widget/AccountingPrintScreens.xml#InvoicePDF"
-      , "subject", String.format((String) config.getParameter("invoiceEmailSubject"), paymentReceipt.getOrderId())
+      , "xslfoAttachScreenLocation", "component://remoteintegration/widget/AccountingPrintScreens.xml#InvoicePDF"
+      , "subject", String.format((String) config.getParameter("invoiceEmailSubject"), invoiceId, paymentReceipt.getOrderId())
       , "bodyText", (String) config.getParameter("invoiceEmailBodyText")
       , "timeZone",  TimeZone.getTimeZone((String) config.getParameter("timeZone"))
       , "locale", locale
@@ -180,14 +182,10 @@ public class ReceiveSalesOrderPayment {
       , "bodyParameters", bodyParameters
       );
       
-      result = dispatcher.runSync("sendMailFromScreen", sendMap);
-      
-      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-        TransactionUtil.rollback();
-        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
-      }
-      
+      // Don't let notification email below fail transaction - opportunistic best-effort email only ;-)
       TransactionUtil.commit();
+
+      dispatcher.runAsync("sendMailFromScreen", sendMap);
       
       return Response.ok(createOFBizResponseString(getClass().getName(), true, "OK")).type("application/json").build();
 
