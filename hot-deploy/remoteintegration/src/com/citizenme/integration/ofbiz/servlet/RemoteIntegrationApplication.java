@@ -15,6 +15,8 @@ public class RemoteIntegrationApplication extends Application {
       classes.add(CreatePanelSalesOrderResource.class);
       classes.add(ReceiveSalesOrderPaymentResource.class);
       classes.add(CancelSalesOrderResource.class);
+      classes.add(CreateOrUpdateCitizenResource.class);
+      classes.add(CreatePanelPurchaseOrderResource.class);
       return classes;
   }  
 }
