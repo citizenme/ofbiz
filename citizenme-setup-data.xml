@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?><entity-engine-xml>
-    <Geo abbreviation=" " createdStamp="2015-11-17 14:17:15.0" createdTxStamp="2015-11-17 14:17:15.0" geoCode="NONE" geoId="GB-NONE" geoTypeId="COUNTY" lastUpdatedStamp="2015-11-19 15:05:20.0" lastUpdatedTxStamp="2015-11-19 15:05:20.0"/>
-    <GeoAssoc createdStamp="2015-11-17 14:23:03.0" createdTxStamp="2015-11-17 14:23:03.0" geoAssocTypeId="REGIONS" geoId="ENGL" geoIdTo="GB-NONE" lastUpdatedStamp="2015-11-17 14:23:03.0" lastUpdatedTxStamp="2015-11-17 14:23:03.0"/>
-</entity-engine-xml>
