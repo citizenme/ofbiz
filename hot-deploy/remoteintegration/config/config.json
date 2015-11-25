@@ -2,7 +2,18 @@
   "parameters": {
     "productStoreId": "10000",
     "originFacilityId": "10000",
-    "prodCatalogId": "CitizenMe"
+    "prodCatalogId": "CitizenMe",
+    "invoiceEmailFrom": "info@citizenme.com",
+    "locale": "en_GB",
+    "timeZone": "UTC",
+    "localTaxJurisdictionGeoId": "GBR",
+    "companyPartyId": "Company",
+    "invoiceEmailSubject": "DEV: invoice #%s for order #%s",
+    "invoiceEmailBodyText": "<p>Hello</p><p>Please find invoice attached.</p><p>Best regards,</p><p>The CitizenMe Team</p>",
+    "orderCancellationEmailSubject": "DEV: Order #%s cancellation",
+    "orderCancellationEmailBodyText": "<p>Hello</p><p>Order has been cancelled. Hope to see you again soon.</p><p>Best regards,</p><p>The CitizenMe Team</p>",
+    "purchaseOrderLocationContactMechId": "10250",
+    "purchaseOrderEmailContactMechId": "10101"
   },
   "taxAuthorities": {
     "GBR": {
