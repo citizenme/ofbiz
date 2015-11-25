@@ -54,9 +54,7 @@ public class CreatePanelPurchaseOrderResource {
     return String.format("%05d", seq);
   }
   
-  private final static String BILLING_LOCATION_PURPOSE_TYPE_ID = "BILLING_LOCATION";
   private final static String ORDER_EMAIL_PURPOSE_TYPE_ID = "ORDER_EMAIL";
-  private final static String BILLING_EMAIL_PURPOSE_TYPE_ID = "BILLING_EMAIL";
   private final static String SHIPPING_LOCATION_PURPOSE_TYPE_ID = "SHIPPING_LOCATION";
 
   @POST
