@@ -3,13 +3,10 @@ package com.citizenme.integration.ofbiz.servlet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -28,7 +25,6 @@ import org.ofbiz.entity.GenericEntityException;
 import org.ofbiz.entity.GenericValue;
 import org.ofbiz.entity.transaction.GenericTransactionException;
 import org.ofbiz.entity.transaction.TransactionUtil;
-import org.ofbiz.order.order.OrderChangeHelper;
 import org.ofbiz.service.GenericServiceException;
 import org.ofbiz.service.LocalDispatcher;
 import org.ofbiz.service.ServiceContainer;
@@ -151,13 +147,13 @@ public class CreatePanelSalesOrderResource {
         , "partyId", order.getClientOrganisationPartyId()
         , "orderTypeId", "SALES_ORDER"
         , "currencyUom", order.getCurrency()
-        , "productStoreId", config.getParameters().get("productStoreId") // CitizenMe store
+        , "productStoreId", config.getParameter("productStoreId") // CitizenMe store
         , "orderId", order.getOrderId()
         , "placingCustomerPartyId", order.getClientAgentPartyId()
         , "endUserCustomerPartyId", order.getClientOrganisationPartyId()
         , "billToCustomerPartyId", order.getClientOrganisationPartyId()
-        , "billFromVendorPartyId", "Company"
-        , "originFacilityId", config.getParameters().get("originFacilityId")
+        , "billFromVendorPartyId", config.getParameter("companyPartyId")
+        , "originFacilityId", config.getParameter("originFacilityId")
         , "orderName", "" // Just empty name for now
         , "webSiteId", "OrderEntry" // Required in order to later send order notifications?!?!
       );
@@ -213,7 +209,7 @@ public class CreatePanelSalesOrderResource {
         , UtilMisc.toMap(
           "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
         , "orderItemTypeId", "PRODUCT_ORDER_ITEM"
-        , "prodCatalogId", config.getParameters().get("prodCatalogId")
+        , "prodCatalogId", config.getParameter("prodCatalogId")
         , "productId", "PANEL-ENTRY"
         , "quantity", order.getPaidParticipants()
         , "selectedAmount", BigDecimal.ZERO
@@ -263,7 +259,7 @@ public class CreatePanelSalesOrderResource {
           , UtilMisc.toMap(
             "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
           , "orderItemTypeId", "PRODUCT_ORDER_ITEM"
-          , "prodCatalogId", config.getParameters().get("prodCatalogId")
+          , "prodCatalogId", config.getParameter("prodCatalogId")
           , "productId", "PANEL-FEE"
           , "quantity", BigDecimal.ONE
           , "selectedAmount", BigDecimal.ZERO
@@ -312,7 +308,7 @@ public class CreatePanelSalesOrderResource {
         , UtilMisc.toMap(
           "orderItemSeqId", getOrderItemSequence(orderItemSeqId)
         , "orderItemTypeId", "PRODUCT_ORDER_ITEM"
-        , "prodCatalogId", config.getParameters().get("prodCatalogId")
+        , "prodCatalogId", config.getParameter("prodCatalogId")
         , "productId", "TRANS-FEE"
         , "quantity", BigDecimal.ONE
         , "selectedAmount", BigDecimal.ZERO
