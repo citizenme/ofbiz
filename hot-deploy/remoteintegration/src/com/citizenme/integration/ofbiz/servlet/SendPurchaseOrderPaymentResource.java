@@ -91,7 +91,7 @@ public class SendPurchaseOrderPaymentResource {
       
       BigDecimal grandTotal = orderHeader.getBigDecimal("grandTotal");
       
-      if (grandTotal.compareTo(paymentSent.getAmount()) > 0)
+      if (grandTotal.compareTo(paymentSent.getGrossAmount()) > 0)
         throw new RuntimeException("Payment of order has to be made in full");
       
       String paymentMethodTypeId;
