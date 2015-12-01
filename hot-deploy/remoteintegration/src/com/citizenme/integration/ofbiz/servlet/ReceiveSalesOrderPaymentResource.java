@@ -124,7 +124,7 @@ public class ReceiveSalesOrderPaymentResource {
       
       result = dispatcher.runSync("createPaymentFromPreference", UtilMisc.toMap("userLogin", userLogin,
           "orderPaymentPreferenceId", paymentPreference.get("orderPaymentPreferenceId"), "paymentRefNum", paymentReceipt.getPaymentReference(),
-          "paymentFromId", paymentReceipt.getClientAgentPartyId(), "comments", paymentReceipt.getPaymentProviderId()));
+          "paymentFromId", paymentReceipt.getClientAgentPartyId(), "comments", String.format("paymentProvider:%s/paymentProviderId:%s/paymentProviderReference:%s", paymentReceipt.getPaymentProvider(), paymentReceipt.getPaymentProviderId(), paymentReceipt.getPaymentReference())));
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
         TransactionUtil.rollback();
@@ -134,20 +134,6 @@ public class ReceiveSalesOrderPaymentResource {
       // Approve order 
       if (! OrderChangeHelper.approveOrder(dispatcher, userLogin, paymentReceipt.getOrderId()))
         throw new RuntimeException("approveOrder failed");
-
-      // Create invoice for all order items
-      // As it turns out this is not needed as the approveOrder calls appears to auto-generate invoice - how nice...
-//      Map<String, Object> invoiceRequestMap = new HashMap<String, Object>();
-//      invoiceRequestMap.put("login.username", ofbizRequest.getLogin());
-//      invoiceRequestMap.put("login.password", ofbizRequest.getPassword());
-//      invoiceRequestMap.put("orderId", order.getOrderId());
-//
-//      result = dispatcher.runSync("createInvoiceForOrderAllItems", invoiceRequestMap);
-//
-//      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-//        TransactionUtil.rollback();
-//        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
-//      }
 
       // Find single invoice id - or fail - it's unexpected and not safe to proceed with multiples 
       // as we expect only a single payment for the full order

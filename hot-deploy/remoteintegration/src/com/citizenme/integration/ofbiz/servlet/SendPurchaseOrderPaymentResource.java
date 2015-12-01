@@ -75,7 +75,7 @@ public class SendPurchaseOrderPaymentResource {
       if (constraintViolations.size() > 0)
         throw new RuntimeException("Invalid input: " + constraintViolations.toString());
       
-      PurchaseOrderPaymentReceipt paymentSent = (PurchaseOrderPaymentReceipt) ofbizRequest.getRequestParameter();
+      PurchaseOrderPaymentReceipt paymentReceipt = (PurchaseOrderPaymentReceipt) ofbizRequest.getRequestParameter();
 
       if (TransactionUtil.begin() == false)
         throw new RuntimeException("Transaction is already unexpectedly started");
@@ -84,19 +84,19 @@ public class SendPurchaseOrderPaymentResource {
       GenericValue userLogin = delegator.findOne("UserLogin", UtilMisc.toMap("userLoginId", ofbizRequest.getLogin()), true);
       
       // get the order header & payment preferences
-      GenericValue orderHeader = delegator.findOne("OrderHeader", UtilMisc.toMap("orderId", paymentSent.getOrderId()), false);
+      GenericValue orderHeader = delegator.findOne("OrderHeader", UtilMisc.toMap("orderId", paymentReceipt.getOrderId()), false);
 
       if (orderHeader == null)
         throw new RuntimeException("Order does not exist");
       
       BigDecimal grandTotal = orderHeader.getBigDecimal("grandTotal");
       
-      if (grandTotal.compareTo(paymentSent.getGrossAmount()) > 0)
+      if (grandTotal.compareTo(paymentReceipt.getGrossAmount()) > 0)
         throw new RuntimeException("Payment of order has to be made in full");
       
       String paymentMethodTypeId;
       
-      switch (paymentSent.getPaymentProvider()) {
+      switch (paymentReceipt.getPaymentProvider()) {
       case "PAYPAL":
         paymentMethodTypeId = "EXT_PAYPAL";
         break;
@@ -106,7 +106,7 @@ public class SendPurchaseOrderPaymentResource {
       }
 
       // Update payment preference to being received
-      List<GenericValue> paymentPreferences = delegator.findByAnd("OrderPaymentPreference", UtilMisc.toMap("orderId", paymentSent.getOrderId(), "paymentMethodTypeId", paymentMethodTypeId));
+      List<GenericValue> paymentPreferences = delegator.findByAnd("OrderPaymentPreference", UtilMisc.toMap("orderId", paymentReceipt.getOrderId(), "paymentMethodTypeId", paymentMethodTypeId));
 
       // Should never happen, but in case of manual changes etc it's not really safe here...
       if (paymentPreferences == null || paymentPreferences.size() != 1)
@@ -121,8 +121,8 @@ public class SendPurchaseOrderPaymentResource {
       delegator.store(paymentPreference);
       
       result = dispatcher.runSync("createPaymentFromPreference", UtilMisc.toMap("userLogin", userLogin,
-          "orderPaymentPreferenceId", paymentPreference.get("orderPaymentPreferenceId"), "paymentRefNum", paymentSent.getPaymentReference(),
-          "paymentFromId", paymentSent.getCitizenPartyId(), "comments", paymentSent.getPaymentProviderId()));
+          "orderPaymentPreferenceId", paymentPreference.get("orderPaymentPreferenceId"), "paymentRefNum", paymentReceipt.getPaymentReference(),
+          "paymentFromId", config.getParameter("companyPartyId"), "comments", String.format("paymentProvider:%s/paymentProviderId:%s/paymentProviderReference:%s", paymentReceipt.getPaymentProvider(), paymentReceipt.getPaymentProviderId(), paymentReceipt.getPaymentReference())));
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
         TransactionUtil.rollback();
@@ -130,12 +130,12 @@ public class SendPurchaseOrderPaymentResource {
       }
       
       // Approve order 
-      if (! OrderChangeHelper.approveOrder(dispatcher, userLogin, paymentSent.getOrderId()))
+      if (! OrderChangeHelper.approveOrder(dispatcher, userLogin, paymentReceipt.getOrderId()))
         throw new RuntimeException("approveOrder failed");
 
       // Find single invoice id - or fail - it's unexpected and not safe to proceed with multiples 
       // as we expect only a single payment for the full order
-      List<GenericValue> orderItemBillings = delegator.findByAnd("OrderItemBilling", UtilMisc.toMap("orderId", paymentSent.getOrderId()));
+      List<GenericValue> orderItemBillings = delegator.findByAnd("OrderItemBilling", UtilMisc.toMap("orderId", paymentReceipt.getOrderId()));
       Set<String> invoiceIds = new HashSet<String>();
       for (GenericValue orderItemBilling : orderItemBillings) {
         invoiceIds.add(orderItemBilling.getString("invoiceId"));
@@ -144,33 +144,8 @@ public class SendPurchaseOrderPaymentResource {
       if (invoiceIds.size() != 1)
         throw new RuntimeException("Unexpected number of invoices for order (there should be only 1): " + invoiceIds.size());
       
-      // Now email the invoice
-//      Locale locale = new Locale((String) config.getParameter("locale"));
-
-//      String invoiceId = (String) invoiceIds.toArray()[0];
-//      
-//      Map<String, Object> bodyParameters = UtilMisc.<String, Object>toMap(
-//          "invoiceId", invoiceId
-//        , "userLogin", userLogin
-//        , "locale", locale);
-//
-//      Map<String, Object> sendMap = UtilMisc.<String, Object>toMap(
-//        "sendFrom", (String) config.getParameter("invoiceEmailFrom")
-//      , "sendTo", paymentSent.getNotificationEmail()
-//      , "xslfoAttachScreenLocation", "component://remoteintegration/widget/AccountingPrintScreens.xml#InvoicePDF"
-//      , "subject", String.format((String) config.getParameter("invoiceEmailSubject"), invoiceId, paymentSent.getOrderId())
-//      , "bodyText", (String) config.getParameter("invoiceEmailBodyText")
-//      , "timeZone",  TimeZone.getTimeZone((String) config.getParameter("timeZone"))
-//      , "locale", locale
-//      , "userLogin", userLogin
-//      , "bodyParameters", bodyParameters
-//      );
-      
-      // Don't let notification email below fail transaction - opportunistic best-effort email only ;-)
       TransactionUtil.commit();
 
-//      dispatcher.runAsync("sendMailFromScreen", sendMap);
-      
       return Response.ok(createOFBizResponseString(getClass().getName(), true, "OK")).type("application/json").build();
 
     } catch (IOException | RuntimeException | GenericEntityException | GenericServiceException e) {

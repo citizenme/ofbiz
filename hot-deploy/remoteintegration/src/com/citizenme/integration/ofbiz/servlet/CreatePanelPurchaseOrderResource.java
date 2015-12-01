@@ -99,7 +99,7 @@ public class CreatePanelPurchaseOrderResource {
         , "billFromVendorPartyId", order.getCitizenPartyId()
         , "supplierAgentPartyId", order.getCitizenPartyId()
         , "originFacilityId", config.getParameters().get("originFacilityId")
-        , "orderName", "" // Just empty name for now
+        , "orderName", String.format("Referring Sales Order Id: %s", order.getReferringSalesOrderId())
         , "webSiteId", "OrderEntry" // Required in order to later send order notifications?!?!
       );
 
