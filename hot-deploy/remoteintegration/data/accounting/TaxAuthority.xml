@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+
+<entity-engine-xml>
+    <!-- UK HMRC tax authority-->
+    <Party partyId="UK_HMRC" partyTypeId="PARTY_GROUP" preferredCurrencyUomId="GBP" description="HM Revenue &amp; Customs (tax &amp; VAT)" statusId="PARTY_ENABLED" createdDate="2015-01-01 00:00:00.0" createdByUserLogin="admin" lastModifiedDate="2015-01-01 00:00:00.0" lastModifiedByUserLogin="admin" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
+    <PartyGroup partyId="UK_HMRC" groupName="UK_HMRC" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
+    <ContactMech contactMechId="UK_HMRC_VAT" contactMechTypeId="POSTAL_ADDRESS" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
+    <PostalAddress contactMechId="UK_HMRC_VAT" toName="HM Revenue and Customs - VAT Written Enquiries Team" address1="Alexander House" address2="21 Victoria Avenue" city="Southend-On-Sea" postalCode="SS99 1BD" countryGeoId="GBR" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
+    <PartyContactMech partyId="UK_HMRC" contactMechId="UK_HMRC_VAT" fromDate="2015-01-01 00:00:00.000" allowSolicitation="N"/>
+    <PartyContactMechPurpose partyId="UK_HMRC" contactMechId="UK_HMRC_VAT" contactMechPurposeTypeId="PAYMENT_LOCATION" fromDate="2015-01-01 00:00:00.000"/>
+    <PartyContactMechPurpose partyId="UK_HMRC" contactMechId="UK_HMRC_VAT" contactMechPurposeTypeId="BILLING_LOCATION" fromDate="2015-01-01 00:00:00.000"/>
+    <PartyRole partyId="UK_HMRC" roleTypeId="TAX_AUTHORITY" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
+
+    <TaxAuthority taxAuthGeoId="GBR" taxAuthPartyId="UK_HMRC" requireTaxIdForExemption="Y" taxIdFormatPattern="^[A-Z]{2}[A-Za-z0-9]{1,12}$" includeTaxInPrice="N" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
+
+    <TaxAuthorityGlAccount taxAuthGeoId="GBR" taxAuthPartyId="UK_HMRC" organizationPartyId="Company" glAccountId="224301" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
+    
+    <TaxAuthorityRateProduct taxAuthorityRateSeqId="10001" taxAuthGeoId="GBR" taxAuthPartyId="UK_HMRC" taxAuthorityRateTypeId="VAT_TAX" productStoreId="10000" productCategoryId="Panel" taxShipping="Y" taxPercentage="20.000000" taxPromotions="Y" fromDate="2015-01-01 00:00:00.0" description="UK VAT @ 20%" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
+ 
+    <PartyTaxAuthInfo partyId="Company" taxAuthGeoId="GBR" taxAuthPartyId="UK_HMRC" fromDate="2015-01-01 00:00:00.0" partyTaxId="GB178846939" isExempt="N" isNexus="Y" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
+
+    <!-- _NA_ TaxAuthority defs -->
+    <TaxAuthority taxAuthGeoId="_NA_" taxAuthPartyId="_NA_" includeTaxInPrice="N"/>
+    <TaxAuthorityGlAccount taxAuthGeoId="_NA_" taxAuthPartyId="_NA_" organizationPartyId="Company" glAccountId="224000"/>
+
+    <TaxAuthorityGlAccount taxAuthGeoId="_NA_" taxAuthPartyId="_NA_" organizationPartyId="Company" glAccountId="224000" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
+
+    <PartyTaxAuthInfo partyId="Company" taxAuthGeoId="_NA_" taxAuthPartyId="_NA_" fromDate="2015-01-01 00:00:00.001" thruDate="" partyTaxId="" isExempt="" isNexus="Y"/>
+    
+</entity-engine-xml>

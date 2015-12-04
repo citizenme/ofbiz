@@ -21,6 +21,15 @@
     <entity-resource type="data" reader-name="demo" loader="main" location="data/RemoteIntegrationSecurityGroupDemoData.xml"/>
     <entity-resource type="data" reader-name="demo" loader="main" location="data/RemoteIntegrationDemoData.xml"/>
 
+    <entity-resource type="data" reader-name="ext" loader="main" location="data/GeoData.xml"/>
+    <entity-resource type="data" reader-name="ext" loader="main" location="data/accounting/GeneralChartOfAccounts.xml"/>
+    <entity-resource type="data" reader-name="ext" loader="main" location="data/accounting/OrganizationData.xml"/>
+    <entity-resource type="data" reader-name="ext" loader="main" location="data/accounting/GlSetupData.xml"/>
+    <entity-resource type="data" reader-name="ext" loader="main" location="data/accounting/TaxAuthority.xml"/>
+
+    <entity-resource type="data" reader-name="ext" loader="main" location="data/product/ProductData.xml"/>
+
+
     <!-- service resources: model(s), eca(s) and group definitions -->
     <service-resource type="model" loader="main" location="servicedef/services.xml"/>
     <!--
