@@ -12,12 +12,12 @@
     "invoiceEmailBodyText": "<p>Hello</p><p>Please find invoice attached.</p><p>Best regards,</p><p>The CitizenMe Team</p>",
     "orderCancellationEmailSubject": "DEV: Order #%s cancellation",
     "orderCancellationEmailBodyText": "<p>Hello</p><p>Order has been cancelled. Hope to see you again soon.</p><p>Best regards,</p><p>The CitizenMe Team</p>",
-    "purchaseOrderLocationContactMechId": "10250",
-    "purchaseOrderEmailContactMechId": "10101"
+    "purchaseOrderLocationContactMechId": "10000",
+    "purchaseOrderEmailContactMechId": "Company"
   },
   "taxAuthorities": {
     "GBR": {
-      "partyId": "10020",
+      "partyId": "UK_HMRC",
       "geoId": "GBR",
       "overrideGlAccountId": "224301",
       "comments": "UK VAT @ 20%",

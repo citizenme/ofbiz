@@ -19,7 +19,7 @@ under the License.
 -->
 <entity-engine-xml>
 
-  <FinAccount finAccountId="10000" finAccountTypeId="BANK_ACCOUNT" statusId="FNACT_ACTIVE" finAccountName="Company Paypal Account" currencyUomId="GBP" organizationPartyId="Company" ownerPartyId="Company" postToGlAccountId="113000" isRefundable="Y" replenishLevel="0.00" actualBalance="94.16" availableBalance="94.16" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
+  <FinAccount finAccountId="10000" finAccountTypeId="BANK_ACCOUNT" statusId="FNACT_ACTIVE" finAccountName="Company Paypal Account" currencyUomId="GBP" organizationPartyId="Company" ownerPartyId="Company" postToGlAccountId="113000" isRefundable="Y" replenishLevel="0.00" actualBalance="0.00" availableBalance="0.00" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
   <FinAccountStatus finAccountId="10000" statusId="FNACT_ACTIVE" statusDate="2015-01-01 00:00:00.0" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
   <PaymentMethod paymentMethodId="CO_PAYPAL" paymentMethodTypeId="EXT_PAYPAL" partyId="Company" finAccountId="10000" description="CitizenMe Company Paypal Account" fromDate="2015-01-01 00:00:00.0" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
 

@@ -40,6 +40,8 @@
 
     <entity-resource type="data" reader-name="ext" loader="main" location="data/accounting/TaxAuthority.xml"/>
 
+    <entity-resource type="data" reader-name="ext" loader="main" location="data/ecommerce/Shipping.xml"/>
+
     <entity-resource type="data" reader-name="ext" loader="main" location="data/order/OrderSecurityGroupData.xml"/>
 
     <entity-resource type="data" reader-name="ext" loader="main" location="data/marketing/MarketingSecurityGroupData.xml"/>
