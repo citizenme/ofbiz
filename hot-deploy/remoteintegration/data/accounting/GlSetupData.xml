@@ -213,7 +213,7 @@ under the License.
         quoteIdPrefix="CQ"
         orderIdPrefix="CO"
         errorGlJournalId="ERROR_JOURNAL"
-        lastInvoiceNumber="100000"
+        lastInvoiceNumber="200000"
      />
 
     <!-- Chart Of Accounts -->
