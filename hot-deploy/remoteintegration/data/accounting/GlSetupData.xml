@@ -368,33 +368,6 @@ under the License.
     <PaymentMethodTypeGlAccount organizationPartyId="Company" paymentMethodTypeId="EXT_PAYPAL" glAccountId="122500"/>
     <PaymentMethodTypeGlAccount organizationPartyId="Company" paymentMethodTypeId="EXT_WORLDPAY" glAccountId="122500"/>
 
-	<!--
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_AMERICANEXPRESS" glAccountId="122100"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_DINERSCLUB" glAccountId="122100"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_DISCOVER" glAccountId="122200"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_VISA" glAccountId="122300"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_MASTERCARD" glAccountId="122300"/>
-	-->
-
-    <!-- The following ones are required until the issue OFBIZ-1524 is resolved -->
-    <!--
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="AmericanExpress" glAccountId="122100"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="DinersClub" glAccountId="122100"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="Discover" glAccountId="122200"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="Visa" glAccountId="122300"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="MasterCard" glAccountId="122300"/>
-    -->
-
-    <!--
-    No need to load these if they are set with the 122000 account (the default for the CREDIT_CARD payment method type)
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_ENROUTE" glAccountId="122000"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_CARTEBLANCHE" glAccountId="122000"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_JCB" glAccountId="122000"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_SOLO" glAccountId="122000"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_SWITCH" glAccountId="122000"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_VISAELECTRON" glAccountId="122000"/>
-    <CreditCardTypeGlAccount organizationPartyId="Company" cardType="CCT_UATP" glAccountId="122000"/>
-    -->
     <FinAccountTypeGlAccount organizationPartyId="Company" finAccountTypeId="GIFTCERT_ACCOUNT" glAccountId="213200"/>
     <FinAccountTypeGlAccount organizationPartyId="Company" finAccountTypeId="DEPOSIT_ACCOUNT" glAccountId="213500"/>
     <FinAccountTypeGlAccount organizationPartyId="Company" finAccountTypeId="BANK_ACCOUNT" glAccountId="213500"/>
@@ -429,23 +402,5 @@ under the License.
     <UomConversionDated uomId="EUR" uomIdTo="EUR" fromDate="2015-01-01 00:00:00.0" conversionFactor="1"/>
     <UomConversionDated uomId="EUR" uomIdTo="GBP" fromDate="2015-01-01 00:00:00.0" conversionFactor="0.77660"/>
     <UomConversionDated uomId="EUR" uomIdTo="USD" fromDate="2015-01-01 00:00:00.0" conversionFactor="0.82658"/>
-
-    <!-- Gl Reconciliation -->
-    <!--
-    <GlReconciliation glReconciliationId="9000" glReconciliationName="demoGlReconciliation" glAccountId="111100" statusId="GLREC_RECONCILED" organizationPartyId="Company" reconciledBalance="75000.00" reconciledDate="2015-01-01 00:00:00.000"/>
-    <GlReconciliation glReconciliationId="9001" glReconciliationName="testGlReconciliation" glAccountId="111100" statusId="GLREC_CREATED" organizationPartyId="Company" reconciledDate="2015-01-01 00:00:00.000"/>
-
-    <GlAccountCategoryMember glAccountId="112000" glAccountCategoryId="9301" fromDate="2015-01-01 00:00:00.0" amountPercentage="50"/>
-    <GlAccountCategoryMember glAccountId="112000" glAccountCategoryId="9302" fromDate="2015-01-01 00:00:00.0" amountPercentage="20"/>
-    <GlAccountCategoryMember glAccountId="112000" glAccountCategoryId="9303" fromDate="2015-01-01 00:00:00.0" amountPercentage="30"/>
-
-    <GlAccountCategoryMember glAccountId="140000" glAccountCategoryId="9301" fromDate="2015-01-01 00:00:00.0" amountPercentage="50"/>
-    <GlAccountCategoryMember glAccountId="140000" glAccountCategoryId="9302" fromDate="2015-01-01 00:00:00.0" amountPercentage="20"/>
-    <GlAccountCategoryMember glAccountId="140000" glAccountCategoryId="9303" fromDate="2015-01-01 00:00:00.0" amountPercentage="30"/>
-
-    <GlAccountCategoryMember glAccountId="516100" glAccountCategoryId="9301" fromDate="2015-01-01 00:00:00.0" amountPercentage="50"/>
-    <GlAccountCategoryMember glAccountId="516100" glAccountCategoryId="9302" fromDate="2015-01-01 00:00:00.0" amountPercentage="20"/>
-    <GlAccountCategoryMember glAccountId="516100" glAccountCategoryId="9303" fromDate="2015-01-01 00:00:00.0" amountPercentage="30"/>
-    -->
 
 </entity-engine-xml>

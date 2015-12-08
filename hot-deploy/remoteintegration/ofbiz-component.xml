@@ -29,6 +29,7 @@
     <entity-resource type="data" reader-name="ext" loader="main" location="data/accounting/OrganizationData.xml"/>
     <entity-resource type="data" reader-name="ext" loader="main" location="data/accounting/GlSetupData.xml"/>
     <entity-resource type="data" reader-name="ext" loader="main" location="data/accounting/AccountingSecurityGroupData.xml"/>
+    <entity-resource type="data" reader-name="ext" loader="main" location="data/accounting/FinAccountData.xml"/>
 
     <entity-resource type="data" reader-name="ext" loader="main" location="data/party/PartyData.xml"/>
     <entity-resource type="data" reader-name="ext" loader="main" location="data/party/PartySecurityGroupData.xml"/>
