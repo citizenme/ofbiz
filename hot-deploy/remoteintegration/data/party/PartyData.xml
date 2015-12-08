@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<entity-engine-xml>
+
+    <!-- allow admin to read company EMail -->
+    <Party partyId="admin"/>
+    <Party partyId="Company"/>
+    <PartyRole partyId="admin" roleTypeId="EMAIL_ADMIN"/>
+    <PartyRole partyId="Company" roleTypeId="_NA_"/>
+    <PartyRelationship partyIdFrom="admin" roleTypeIdFrom="EMAIL_ADMIN" partyIdTo="Company" roleTypeIdTo="_NA_" fromDate="2000-01-01 00:00:00"/>
+
+    <ContactMech contactMechId="admin" contactMechTypeId="EMAIL_ADDRESS" infoString="service@citizenme.com"/>
+    <PartyContactMech partyId="admin" contactMechId="admin" fromDate="2015-01-01 00:00:00.0" allowSolicitation="Y"/>
+    <PartyContactMechPurpose contactMechPurposeTypeId="PRIMARY_EMAIL" partyId="admin" contactMechId="admin" fromDate="2015-01-01 00:00:00.0"/>
+
+    <!-- new registration notification -->
+    <EmailTemplateSetting emailTemplateSettingId="PARTY_REGISTER" bodyScreenLocation="component://party/widget/partymgr/PartyScreens.xml#CreateUserNotification" subject="New Account Created" bccAddress="service@citizenme.com" fromAddress="service@citizenme.com"/>
+
+    <!-- make admin an employee of Company -->
+    <PartyRole partyId="admin" roleTypeId="CONTACT"/>
+    <PartyRole partyId="Company" roleTypeId="ACCOUNT"/>
+    <PartyRelationship partyIdFrom="Company" roleTypeIdFrom="ACCOUNT" partyIdTo="admin" roleTypeIdTo="CONTACT" fromDate="2015-01-01 00:00:00.000" partyRelationshipTypeId="EMPLOYMENT"/>
+
+</entity-engine-xml>

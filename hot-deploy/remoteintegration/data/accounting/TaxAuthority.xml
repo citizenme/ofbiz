@@ -36,13 +36,5 @@
     <TaxAuthorityRateProduct taxAuthorityRateSeqId="10001" taxAuthGeoId="GBR" taxAuthPartyId="UK_HMRC" taxAuthorityRateTypeId="VAT_TAX" productStoreId="10000" productCategoryId="Panel" taxShipping="Y" taxPercentage="20.000000" taxPromotions="Y" fromDate="2015-01-01 00:00:00.0" description="UK VAT @ 20%" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
  
     <PartyTaxAuthInfo partyId="Company" taxAuthGeoId="GBR" taxAuthPartyId="UK_HMRC" fromDate="2015-01-01 00:00:00.0" partyTaxId="GB178846939" isExempt="N" isNexus="Y" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
-
-    <!-- _NA_ TaxAuthority defs -->
-    <TaxAuthority taxAuthGeoId="_NA_" taxAuthPartyId="_NA_" includeTaxInPrice="N"/>
-    <TaxAuthorityGlAccount taxAuthGeoId="_NA_" taxAuthPartyId="_NA_" organizationPartyId="Company" glAccountId="224000"/>
-
-    <TaxAuthorityGlAccount taxAuthGeoId="_NA_" taxAuthPartyId="_NA_" organizationPartyId="Company" glAccountId="224000" lastUpdatedStamp="2015-01-01 00:00:00.0" lastUpdatedTxStamp="2015-01-01 00:00:00.0" createdStamp="2015-01-01 00:00:00.0" createdTxStamp="2015-01-01 00:00:00.0"/>
-
-    <PartyTaxAuthInfo partyId="Company" taxAuthGeoId="_NA_" taxAuthPartyId="_NA_" fromDate="2015-01-01 00:00:00.001" thruDate="" partyTaxId="" isExempt="" isNexus="Y"/>
     
 </entity-engine-xml>
