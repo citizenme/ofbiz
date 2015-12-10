@@ -20,11 +20,22 @@
 <entity-engine-xml>
 
     <!-- allow admin to read company EMail -->
-    <Party partyId="admin"/>
-    <Party partyId="Company"/>
+    <Party partyId="admin" partyTypeId="PERSON"/>
+    <Person partyId="admin" firstName="THE" middleName="PRIVILEGED" lastName="ADMINISTRATOR" personalTitle="Mr."/>
     <PartyRole partyId="admin" roleTypeId="EMAIL_ADMIN"/>
+    <PartyRole partyId="admin" roleTypeId="ADDRESSEE"/>
+    <PartyRole partyId="admin" roleTypeId="BUYER"/>
+    <PartyRole partyId="admin" roleTypeId="CONTACT"/>
+    <PartyRole partyId="admin" roleTypeId="MANAGER"/> 
+    <PartyRole partyId="admin" roleTypeId="ORDER_CLERK"/>
+    <PartyRole partyId="admin" roleTypeId="ORIGINATOR"/>
+    <PartyRole partyId="admin" roleTypeId="REQ_TAKER"/>
+    <PartyRole partyId="admin" roleTypeId="SALES_REP"/>
+    <PartyRole partyId="admin" roleTypeId="SHIPMENT_CLERK"/>
+
+    <Party partyId="Company"/>
     <PartyRole partyId="Company" roleTypeId="_NA_"/>
-    <PartyRelationship partyIdFrom="admin" roleTypeIdFrom="EMAIL_ADMIN" partyIdTo="Company" roleTypeIdTo="_NA_" fromDate="2000-01-01 00:00:00"/>
+    <PartyRelationship partyIdFrom="admin" roleTypeIdFrom="EMAIL_ADMIN" partyIdTo="Company" roleTypeIdTo="_NA_" fromDate="2015-01-01 00:00:00"/>
 
     <ContactMech contactMechId="admin" contactMechTypeId="EMAIL_ADDRESS" infoString="service@citizenme.com"/>
     <PartyContactMech partyId="admin" contactMechId="admin" fromDate="2015-01-01 00:00:00.0" allowSolicitation="Y"/>
