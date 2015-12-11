@@ -31,8 +31,4 @@ under the License.
     <SecurityGroupPermission groupId="VIEWADMIN" permissionId="OFBTOOLS_VIEW"/>
     <SecurityGroupPermission groupId="BIZADMIN" permissionId="OFBTOOLS_VIEW"/>
 
-    <!-- allocate userLoginId's -->
-    <UserLoginSecurityGroup groupId="FULLADMIN" userLoginId="admin" fromDate="2015-01-01 00:00:00.0"/>
-    <UserLoginSecurityGroup groupId="BIZADMIN" userLoginId="bizadmin" fromDate="2015-01-01 00:00:00.0"/>
-
 </entity-engine-xml>
