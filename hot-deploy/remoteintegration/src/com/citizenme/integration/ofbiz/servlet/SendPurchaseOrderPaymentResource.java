@@ -128,6 +128,27 @@ public class SendPurchaseOrderPaymentResource {
         TransactionUtil.rollback();
         return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
+
+      String paymentId = (String) result.get("paymentId");
+      
+      Map<String, Object> transCtx = UtilMisc.<String, Object>toMap("finAccountTransTypeId", "WITHDRAWAL");
+      transCtx.put("finAccountId", "10000");
+//      transCtx.put("partyId", config.getParameter("companyPartyId"));
+      transCtx.put("partyId", paymentReceipt.getCitizenPartyId());
+      transCtx.put("orderId", paymentReceipt.getOrderId());
+//      transCtx.put("orderItemSeqId", orderItemSeqId);
+      transCtx.put("reasonEnumId", "FATR_PURCHASE");
+      transCtx.put("amount", paymentReceipt.getGrossAmount());
+      transCtx.put("userLogin", userLogin);
+      transCtx.put("paymentId", paymentId);
+
+      result = dispatcher.runSync("createFinAccountTrans", transCtx);
+
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
+      
       
       // Approve order 
       if (! OrderChangeHelper.approveOrder(dispatcher, userLogin, paymentReceipt.getOrderId()))
