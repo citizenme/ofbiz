@@ -34,6 +34,7 @@ import org.ofbiz.service.ServiceUtil;
 import com.citizenme.integration.ofbiz.OFBizRequest;
 import com.citizenme.integration.ofbiz.helper.Config;
 import com.citizenme.integration.ofbiz.helper.ConfigHelper;
+import com.citizenme.integration.ofbiz.helper.PaymentProviderConfig;
 import com.citizenme.integration.ofbiz.helper.RequestHelper;
 import com.citizenme.integration.ofbiz.model.PurchaseOrderPaymentReceipt;
 
@@ -47,7 +48,7 @@ import static com.citizenme.integration.ofbiz.helper.RequestHelper.*;
 @Path("/sendpurchaseorderpayment")
 public class SendPurchaseOrderPaymentResource {
 
-  private static Config config = ConfigHelper.getConfig();
+  private static Config config;
   
   private static Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
   
@@ -68,6 +69,8 @@ public class SendPurchaseOrderPaymentResource {
     Map<String, Object> result = null;
 
     try {
+      config = ConfigHelper.getConfig();
+
       OFBizRequest ofbizRequest = RequestHelper.deserializeOFBizRequest(requestBodyStream);
       
       Set<ConstraintViolation<OFBizRequest>> constraintViolations = validator.validate(ofbizRequest);
@@ -94,19 +97,12 @@ public class SendPurchaseOrderPaymentResource {
       if (grandTotal.compareTo(paymentReceipt.getGrossAmount()) > 0)
         throw new RuntimeException("Payment of order has to be made in full");
       
-      String paymentMethodTypeId;
-      
-      switch (paymentReceipt.getPaymentProvider()) {
-      case "PAYPAL":
-        paymentMethodTypeId = "EXT_PAYPAL";
-        break;
-      
-      default:
+      PaymentProviderConfig paymentProviderConfig = config.getPaymentProviderConfig(paymentReceipt.getPaymentProvider());
+      if (paymentProviderConfig == null)
         throw new RuntimeException("Invalid payment provider provided");
-      }
 
       // Update payment preference to being received
-      List<GenericValue> paymentPreferences = delegator.findByAnd("OrderPaymentPreference", UtilMisc.toMap("orderId", paymentReceipt.getOrderId(), "paymentMethodTypeId", paymentMethodTypeId));
+      List<GenericValue> paymentPreferences = delegator.findByAnd("OrderPaymentPreference", UtilMisc.toMap("orderId", paymentReceipt.getOrderId(), "paymentMethodTypeId", paymentProviderConfig.getPaymentMethodTypeId()));
 
       // Should never happen, but in case of manual changes etc it's not really safe here...
       if (paymentPreferences == null || paymentPreferences.size() != 1)
@@ -131,24 +127,23 @@ public class SendPurchaseOrderPaymentResource {
 
       String paymentId = (String) result.get("paymentId");
       
-      Map<String, Object> transCtx = UtilMisc.<String, Object>toMap("finAccountTransTypeId", "WITHDRAWAL");
-      transCtx.put("finAccountId", "10000");
-//      transCtx.put("partyId", config.getParameter("companyPartyId"));
-      transCtx.put("partyId", paymentReceipt.getCitizenPartyId());
-      transCtx.put("orderId", paymentReceipt.getOrderId());
-//      transCtx.put("orderItemSeqId", orderItemSeqId);
-      transCtx.put("reasonEnumId", "FATR_PURCHASE");
-      transCtx.put("amount", paymentReceipt.getGrossAmount());
-      transCtx.put("userLogin", userLogin);
-      transCtx.put("paymentId", paymentId);
+      Map<String, Object> finAccountTrans = UtilMisc.<String, Object>toMap("finAccountTransTypeId", "WITHDRAWAL");
+      finAccountTrans.put("finAccountId", paymentProviderConfig.getFinAccountId());
+//      finAccountTrans.put("partyId", config.getParameter("companyPartyId"));
+      finAccountTrans.put("partyId", paymentReceipt.getCitizenPartyId());
+      finAccountTrans.put("orderId", paymentReceipt.getOrderId());
+//      finAccountTrans.put("orderItemSeqId", orderItemSeqId);
+      finAccountTrans.put("reasonEnumId", "FATR_PURCHASE");
+      finAccountTrans.put("amount", paymentReceipt.getGrossAmount());
+      finAccountTrans.put("userLogin", userLogin);
+      finAccountTrans.put("paymentId", paymentId);
 
-      result = dispatcher.runSync("createFinAccountTrans", transCtx);
+      result = dispatcher.runSync("createFinAccountTrans", finAccountTrans);
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
         TransactionUtil.rollback();
         return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
-      
       
       // Approve order 
       if (! OrderChangeHelper.approveOrder(dispatcher, userLogin, paymentReceipt.getOrderId()))

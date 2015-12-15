@@ -25,20 +25,14 @@ public class ConfigHelper {
     om.enable(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS);
   }
   
-  public static synchronized Config getConfig() {
+  public static synchronized Config getConfig() throws IOException {
     
     if (config != null)
       return config;
     
-    try {
-      String configJson = FileUtil.readString("UTF-8", new File("hot-deploy/remoteintegration/config/config.json"));
-      
-      config = om.readValue(configJson, Config.class);
-      
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+    String configJson = FileUtil.readString("UTF-8", new File("hot-deploy/remoteintegration/config/config.json"));
+    
+    config = om.readValue(configJson, Config.class);
     
     return config;
   }

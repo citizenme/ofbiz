@@ -41,7 +41,7 @@ import static com.citizenme.integration.ofbiz.helper.RequestHelper.*;
 @Path("/createorupdateclientagent")
 public class CreateOrUpdateClientAgentResource {
 
-  private static Config config = ConfigHelper.getConfig();
+  private static Config config;
 
   private static Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
   
@@ -56,6 +56,8 @@ public class CreateOrUpdateClientAgentResource {
   public Response execute(InputStream requestBodyStream) throws GenericTransactionException {
     
     try {
+      config = ConfigHelper.getConfig();
+
       OFBizRequest ofbizRequest = RequestHelper.deserializeOFBizRequest(requestBodyStream);
       
       Set<ConstraintViolation<OFBizRequest>> constraintViolations = validator.validate(ofbizRequest);

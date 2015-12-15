@@ -9,6 +9,8 @@ public class Config {
 
   private Map<String, TaxAuthority> taxAuthorities;
   
+  private Map<String, PaymentProviderConfig> paymentProviderConfigs;
+  
   public Map<String, Object> getParameters() {
     return parameters;
   }
@@ -25,11 +27,24 @@ public class Config {
     this.taxAuthorities = taxAuthorities;
   }
   
-  public Object getParameter(String name) {
-    return parameters.get(name);
+  public Object getParameter(String key) {
+    return parameters.get(key);
   }
   
-  public TaxAuthority getTaxAuthority(String name) {
-    return taxAuthorities.get(name);
+  public TaxAuthority getTaxAuthority(String key) {
+    return taxAuthorities.get(key);
   }
+
+  public Map<String, PaymentProviderConfig> getPaymentProviderConfigs() {
+    return paymentProviderConfigs;
+  }
+
+  public void setPaymentProviderConfigs(Map<String, PaymentProviderConfig> paymentProviderConfigs) {
+    this.paymentProviderConfigs = paymentProviderConfigs;
+  }
+  
+  public PaymentProviderConfig getPaymentProviderConfig(String key) {
+    return paymentProviderConfigs.get(key);
+  }
+  
 }

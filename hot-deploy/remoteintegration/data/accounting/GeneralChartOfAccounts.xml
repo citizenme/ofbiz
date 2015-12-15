@@ -1272,6 +1272,7 @@ but they are grouped here for convenience purposes -->
   <GlAccount parentGlAccountId="700000" glAccountId="709000" accountCode="709000"
     glAccountClassId="SGA_EXPENSE" glAccountTypeId="" glResourceTypeId="MONEY"
     accountName="OTHER SERVICE CHARGES" description=""/>
+    <GlAccount accountCode="709100" accountName="PAYPAL FEES" glAccountClassId="SGA_EXPENSE" glAccountId="709100" glAccountTypeId="" glResourceTypeId="MONEY" parentGlAccountId="709000"/>
 
   <GlAccount parentGlAccountId="700000" glAccountId="710000" accountCode="710000"
     glAccountClassId="SGA_EXPENSE" glAccountTypeId="" glResourceTypeId="MONEY"

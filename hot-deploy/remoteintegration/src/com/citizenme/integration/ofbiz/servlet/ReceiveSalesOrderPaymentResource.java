@@ -3,6 +3,7 @@ package com.citizenme.integration.ofbiz.servlet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -20,6 +21,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
 import org.ofbiz.base.util.Debug;
+import org.ofbiz.base.util.UtilDateTime;
 import org.ofbiz.base.util.UtilMisc;
 import org.ofbiz.entity.DelegatorFactory;
 import org.ofbiz.entity.GenericDelegator;
@@ -36,6 +38,7 @@ import org.ofbiz.service.ServiceUtil;
 import com.citizenme.integration.ofbiz.OFBizRequest;
 import com.citizenme.integration.ofbiz.helper.Config;
 import com.citizenme.integration.ofbiz.helper.ConfigHelper;
+import com.citizenme.integration.ofbiz.helper.PaymentProviderConfig;
 import com.citizenme.integration.ofbiz.helper.RequestHelper;
 import com.citizenme.integration.ofbiz.model.SalesOrderPaymentReceipt;
 
@@ -49,7 +52,7 @@ import static com.citizenme.integration.ofbiz.helper.RequestHelper.*;
 @Path("/receivesalesorderpayment")
 public class ReceiveSalesOrderPaymentResource {
 
-  private static Config config = ConfigHelper.getConfig();
+  private static Config config;
   
   private static Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
   
@@ -70,6 +73,8 @@ public class ReceiveSalesOrderPaymentResource {
     Map<String, Object> result = null;
 
     try {
+      config = ConfigHelper.getConfig();
+          
       OFBizRequest ofbizRequest = RequestHelper.deserializeOFBizRequest(requestBodyStream);
       
       Set<ConstraintViolation<OFBizRequest>> constraintViolations = validator.validate(ofbizRequest);
@@ -96,19 +101,12 @@ public class ReceiveSalesOrderPaymentResource {
       if (grandTotal.compareTo(paymentReceipt.getGrossAmount()) > 0)
         throw new RuntimeException("Payment of order has to be made in full");
       
-      String paymentMethodTypeId;
-      
-      switch (paymentReceipt.getPaymentProvider()) {
-      case "PAYPAL":
-        paymentMethodTypeId = "EXT_PAYPAL";
-        break;
-      
-      default:
+      PaymentProviderConfig paymentProviderConfig = config.getPaymentProviderConfig(paymentReceipt.getPaymentProvider());
+      if (paymentProviderConfig == null)
         throw new RuntimeException("Invalid payment provider provided");
-      }
 
       // Update payment preference to being received
-      List<GenericValue> paymentPreferences = delegator.findByAnd("OrderPaymentPreference", UtilMisc.toMap("orderId", paymentReceipt.getOrderId(), "paymentMethodTypeId", paymentMethodTypeId));
+      List<GenericValue> paymentPreferences = delegator.findByAnd("OrderPaymentPreference", UtilMisc.toMap("orderId", paymentReceipt.getOrderId(), "paymentMethodTypeId", paymentProviderConfig.getPaymentMethodTypeId()));
 
       // Should never happen, but in case of manual changes etc it's not really safe here...
       if (paymentPreferences == null || paymentPreferences.size() != 1)
@@ -120,11 +118,17 @@ public class ReceiveSalesOrderPaymentResource {
         throw new RuntimeException("Order is already paid for");
       
       paymentPreference.set("statusId", "PAYMENT_RECEIVED");
+//      paymentPreference.set("maxAmount", paymentReceipt.getNetAmount()); // Override Gross to create payment from actual amount received
       delegator.store(paymentPreference);
       
-      result = dispatcher.runSync("createPaymentFromPreference", UtilMisc.toMap("userLogin", userLogin,
-          "orderPaymentPreferenceId", paymentPreference.get("orderPaymentPreferenceId"), "paymentRefNum", paymentReceipt.getPaymentReference(),
-          "paymentFromId", paymentReceipt.getClientAgentPartyId(), "comments", String.format("paymentProvider:%s/paymentProviderId:%s/paymentProviderReference:%s", paymentReceipt.getPaymentProvider(), paymentReceipt.getPaymentProviderId(), paymentReceipt.getPaymentReference())));
+      result = dispatcher.runSync("createPaymentFromPreference", UtilMisc.toMap(
+        "userLogin", userLogin
+      , "orderPaymentPreferenceId", paymentPreference.get("orderPaymentPreferenceId")
+      , "paymentRefNum", paymentReceipt.getPaymentReference()
+      , "paymentFromId", paymentReceipt.getClientAgentPartyId()
+      , "comments", String.format("paymentProvider:%s/paymentProviderId:%s/paymentProviderReference:%s", paymentReceipt.getPaymentProvider(), paymentReceipt.getPaymentProviderId(), paymentReceipt.getPaymentReference())
+       )
+      );
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
         TransactionUtil.rollback();
@@ -132,24 +136,67 @@ public class ReceiveSalesOrderPaymentResource {
       }
       
       String paymentId = (String) result.get("paymentId");
+/*
+      Map<String, Object> finAccountTrans = UtilMisc.<String, Object>toMap("finAccountTransTypeId", "DEPOSIT");
+      finAccountTrans.put("finAccountId", paymentProviderConfig.getFinAccountId());
+//      finAccountTrans.put("partyId", paymentReceipt.getClientOrganisationPartyId());
+      finAccountTrans.put("partyId", config.getParameter("companyPartyId"));
+      finAccountTrans.put("orderId", paymentReceipt.getOrderId());
+      finAccountTrans.pu  t("reasonEnumId", "FATR_PURCHASE");
+      finAccountTrans.put("amount", paymentReceipt.getNetAmount());
+      finAccountTrans.put("userLogin", userLogin);
+      finAccountTrans.put("paymentId", paymentId);
       
-      Map<String, Object> transCtx = UtilMisc.<String, Object>toMap("finAccountTransTypeId", "DEPOSIT");
-      transCtx.put("finAccountId", "10000");
-      transCtx.put("partyId", paymentReceipt.getClientOrganisationPartyId());
-      transCtx.put("orderId", paymentReceipt.getOrderId());
-//      transCtx.put("orderItemSeqId", orderItemSeqId);
-      transCtx.put("reasonEnumId", "FATR_PURCHASE");
-      transCtx.put("amount", paymentReceipt.getNetAmount());
-      transCtx.put("userLogin", userLogin);
-      transCtx.put("paymentId", paymentId);
+      result = dispatcher.runSync("createFinAccountTrans", finAccountTrans);
+*/
 
-      result = dispatcher.runSync("createFinAccountTrans", transCtx);
+      Map<String, Object> finAccountTrans = UtilMisc.<String, Object>toMap(
+        "userLogin", userLogin
+      , "finAccountId", paymentProviderConfig.getFinAccountId()
+      , "paymentIds", Arrays.asList( paymentId )
+      , "groupInOneTransaction", "Y"
+      , "paymentGroupTypeId", "BATCH_PAYMENT"
+      , "paymentGroupName", "BATCH_PAYMENT paymentId: " + paymentId
+      );
+      
+      result = dispatcher.runSync("depositWithdrawPayments", finAccountTrans);
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
         TransactionUtil.rollback();
         return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
+
+      String finAccountTransId = (String) result.get("finAccountTransId");
+      String paymentGroupId = (String) result.get("paymentGroupId");
       
+      Map<String, Object> createGlReconciliation = UtilMisc.<String, Object>toMap(
+        "userLogin", userLogin
+      , "glReconciliationName", "Reconciliation paymentId: " + paymentId
+      );
+
+      result = dispatcher.runSync("createGlReconciliation", createGlReconciliation);
+
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
+
+      String glReconciliationId = (String) result.get("glReconciliationId");
+      
+      Map<String, Object> reconcileFinAccountTrans = UtilMisc.<String, Object>toMap(
+        "userLogin", userLogin
+      , "finAccountTransId", finAccountTransId
+      , "organizationPartyId", config.getParameter("companyPartyId")
+     // , "glReconciliationId", glReconciliationId
+      );
+
+      result = dispatcher.runSync("reconcileFinAccountTrans", reconcileFinAccountTrans);
+
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
+
       // Approve order 
       if (! OrderChangeHelper.approveOrder(dispatcher, userLogin, paymentReceipt.getOrderId()))
         throw new RuntimeException("approveOrder failed");
@@ -186,6 +233,54 @@ public class ReceiveSalesOrderPaymentResource {
       , "userLogin", userLogin
       , "bodyParameters", bodyParameters
       );
+      
+      BigDecimal feeAmount = paymentReceipt.getGrossAmount().subtract(paymentReceipt.getNetAmount());
+
+      // There's likely a fee charged by payment provider that we need to log: (gross - net) amounts returned by payment provider
+      if (feeAmount.compareTo(BigDecimal.ZERO) > 0) {
+/*        
+        // Create payment provider fee transaction
+        Map<String, Object> quickCreateAcctgTransAndEntries = UtilMisc.<String, Object>toMap(
+//          "finAccountTransId", "DEPOSIT"
+            "transactionDate", UtilDateTime.nowTimestamp()
+          , "glFiscalTypeId", "ACTUAL"
+          , "organizationPartyId", config.getParameter("companyPartyId")
+          , "partyId", config.getParameter("companyPartyId")
+          , "amount", feeAmount
+          , "currencyUomId", paymentReceipt.getCurrency()
+          , "origAmount", feeAmount
+          , "origCurrencyUomId", paymentReceipt.getCurrency()
+          , "acctgTransEntryTypeId", "_NA_"
+          , "debitGlAccountId", paymentProviderConfig.getChargeGlDebitAccountId()
+          , "creditGlAccountId", paymentProviderConfig.getChargeGlCreditAccountId()
+          , "acctgTransTypeId", "EXTERNAL_ACCTG_TRANS"
+          , "userLogin", userLogin
+          , "invoiceId", invoiceId
+          , "paymentId", paymentId
+          , "groupStatusId", "AES_NOT_RECONCILED"
+        );
+
+        result = dispatcher.runSync("quickCreateAcctgTransAndEntries", quickCreateAcctgTransAndEntries);
+        
+        if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+          TransactionUtil.rollback();
+          return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        }
+
+        // Post transaction
+        Map<String, Object> postAcctgTrans = UtilMisc.<String, Object>toMap(
+          "acctgTransId", result.get("acctgTransId")
+        , "userLogin", userLogin
+        );
+        
+        result = dispatcher.runSync("postAcctgTrans", postAcctgTrans);
+        
+        if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+          TransactionUtil.rollback();
+          return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        }
+*/
+      }
       
       // Don't let notification email below fail transaction - opportunistic best-effort email only ;-)
       TransactionUtil.commit();

@@ -24,5 +24,14 @@
       "rateSeqId": "10001",
       "orderAdjustmentTypeId": "SALES_TAX"
     }
+  },
+  "paymentProviderConfigs" : {
+    "PAYPAL" : {
+      "id": "PAYPAL",
+      "finAccountId": "10000",
+      "chargeGlCreditAccountId": "709100",
+      "chargeGlDebitAccountId": "113000",
+      "paymentMethodTypeId": "EXT_PAYPAL"
+    }
   }
 }

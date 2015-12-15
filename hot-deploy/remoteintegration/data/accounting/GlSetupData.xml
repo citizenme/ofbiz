@@ -291,6 +291,9 @@ under the License.
     <GlAccountOrganization organizationPartyId="Company" glAccountId="649000" fromDate="2015-01-01 00:00:00.0"/>
     <GlAccountOrganization organizationPartyId="Company" glAccountId="650000" fromDate="2015-01-01 00:00:00.0"/>
     <GlAccountOrganization organizationPartyId="Company" glAccountId="675400" fromDate="2015-01-01 00:00:00.0"/>
+    <GlAccountOrganization glAccountId="700000" fromDate="2015-01-01 00:00:00.0" organizationPartyId="Company"/>
+    <GlAccountOrganization glAccountId="709000" fromDate="2015-01-01 00:00:00.0" organizationPartyId="Company"/>
+    <GlAccountOrganization glAccountId="709100" fromDate="2015-01-01 00:00:00.0" organizationPartyId="Company"/>
     <GlAccountOrganization organizationPartyId="Company" glAccountId="804000" fromDate="2015-01-01 00:00:00.0"/>
     <GlAccountOrganization organizationPartyId="Company" glAccountId="810000" fromDate="2015-01-01 00:00:00.0"/>
     <GlAccountOrganization organizationPartyId="Company" glAccountId="850000" fromDate="2015-01-01 00:00:00.0"/>
