@@ -182,12 +182,26 @@ public class ReceiveSalesOrderPaymentResource {
       }
 
       String glReconciliationId = (String) result.get("glReconciliationId");
+
+      Map<String, Object> assignGlRecToFinAccTrans = UtilMisc.<String, Object>toMap(
+        "userLogin", userLogin
+      , "glReconciliationId", glReconciliationId
+      , "finAccountTransId", finAccountTransId
+      );
+      
+      result = dispatcher.runSync("assignGlRecToFinAccTrans", assignGlRecToFinAccTrans);
+
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
       
       Map<String, Object> reconcileFinAccountTrans = UtilMisc.<String, Object>toMap(
         "userLogin", userLogin
+//      , "finAccountId", paymentProviderConfig.getFinAccountId()
       , "finAccountTransId", finAccountTransId
       , "organizationPartyId", config.getParameter("companyPartyId")
-     // , "glReconciliationId", glReconciliationId
+//      , "glReconciliationId", glReconciliationId
       );
 
       result = dispatcher.runSync("reconcileFinAccountTrans", reconcileFinAccountTrans);
