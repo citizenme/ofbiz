@@ -2,7 +2,9 @@ package com.citizenme.integration.ofbiz.servlet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,6 +18,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
 import org.ofbiz.base.util.Debug;
+import org.ofbiz.base.util.UtilDateTime;
 import org.ofbiz.base.util.UtilMisc;
 import org.ofbiz.entity.DelegatorFactory;
 import org.ofbiz.entity.GenericDelegator;
@@ -43,6 +46,9 @@ public class CreateOrUpdateCitizenResource {
 
   private static Config config;
 
+  // Product may vary later - but hardcoded for now
+  private static String suppliedProduct = "PANEL-ENTRY";
+  
   private static Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
   
   private GenericDelegator delegator = (GenericDelegator) DelegatorFactory.getDelegator("default");
@@ -124,8 +130,8 @@ public class CreateOrUpdateCitizenResource {
         return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
       
-      // Check if party is already set-up with relationship CUSTOMER
-      GenericValue partyToRole = delegator.findOne("PartyRole", UtilMisc.toMap("partyId", citizen.getPartyId(), "roleTypeId", "CUSTOMER"), false);
+      // Set-up citizen with SUPPLIER relationship
+      GenericValue partyToRole = delegator.findOne("PartyRole", UtilMisc.toMap("partyId", citizen.getPartyId(), "roleTypeId", "SUPPLIER"), false);
       if (partyToRole == null) {
         // Add party role SUPPLIER as person will supply a product (service)
         Map<String, Object> createPartyRoleMap = new HashMap<String, Object>();
@@ -142,6 +148,29 @@ public class CreateOrUpdateCitizenResource {
         }
       }
 
+      // Set-up citizen as a supplier of PANEL-ENTRY product
+      List<GenericValue> supplierProducts = delegator.findByAnd("SupplierProduct", UtilMisc.toMap("partyId", citizen.getPartyId(), "productId", suppliedProduct));
+      if (supplierProducts.isEmpty()) {
+        // Add party as supplier of product
+        Map<String, Object> createSupplierProduct = new HashMap<String, Object>();
+        createSupplierProduct.put("login.username", ofbizRequest.getLogin());
+        createSupplierProduct.put("login.password", ofbizRequest.getPassword());
+        createSupplierProduct.put("partyId", citizen.getPartyId());
+        createSupplierProduct.put("productId", suppliedProduct);
+        createSupplierProduct.put("supplierProductId", suppliedProduct); // Just keep the same as our product id
+        createSupplierProduct.put("currencyUomId", citizen.getPreferredCurrencyUomId());
+        createSupplierProduct.put("minimumOrderQuantity", BigDecimal.ZERO);
+        createSupplierProduct.put("availableFromDate", UtilDateTime.nowTimestamp());
+        createSupplierProduct.put("lastPrice", BigDecimal.ZERO);
+        
+        result = dispatcher.runSync("createSupplierProduct", createSupplierProduct);
+  
+        if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+          TransactionUtil.rollback();
+          return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        }
+      }
+      
       TransactionUtil.commit();
       
       return Response.ok(createOFBizResponseString(getClass().getName(), true, "OK")).type("application/json").build();

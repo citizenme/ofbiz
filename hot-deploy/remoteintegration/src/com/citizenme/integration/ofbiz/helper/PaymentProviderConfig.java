@@ -11,6 +11,8 @@ public class PaymentProviderConfig {
   private String chargeGlDebitAccountId;
   
   private String paymentMethodTypeId;
+
+  private String paymentMethodId;
   
   public String getId() {
     return id;
@@ -50,6 +52,14 @@ public class PaymentProviderConfig {
 
   public void setPaymentMethodTypeId(String paymentMethodTypeId) {
     this.paymentMethodTypeId = paymentMethodTypeId;
+  }
+
+  public String getPaymentMethodId() {
+    return paymentMethodId;
+  }
+
+  public void setPaymentMethodId(String paymentMethodId) {
+    this.paymentMethodId = paymentMethodId;
   }
   
 }

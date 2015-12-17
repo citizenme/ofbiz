@@ -178,6 +178,7 @@ public class CreatePanelSalesOrderResource {
         , UtilMisc.toMap(
             "paymentMethodTypeId", "EXT_PAYPAL"
           , "maxAmount", order.getOrderTotal()
+          , "statusId", "PMNT_NOT_PAID"
       ));
 
       orderPaymentInfo.add(orderPaymentPreference);

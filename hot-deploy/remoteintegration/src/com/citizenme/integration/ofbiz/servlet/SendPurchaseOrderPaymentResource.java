@@ -3,6 +3,7 @@ package com.citizenme.integration.ofbiz.servlet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
 import org.ofbiz.base.util.Debug;
+import org.ofbiz.base.util.UtilDateTime;
 import org.ofbiz.base.util.UtilMisc;
 import org.ofbiz.entity.DelegatorFactory;
 import org.ofbiz.entity.GenericDelegator;
@@ -101,42 +103,65 @@ public class SendPurchaseOrderPaymentResource {
       if (paymentProviderConfig == null)
         throw new RuntimeException("Invalid payment provider provided");
 
-      // Update payment preference to being received
-      List<GenericValue> paymentPreferences = delegator.findByAnd("OrderPaymentPreference", UtilMisc.toMap("orderId", paymentReceipt.getOrderId(), "paymentMethodTypeId", paymentProviderConfig.getPaymentMethodTypeId()));
+      // Approve order
+      if (! OrderChangeHelper.approveOrder(dispatcher, userLogin, paymentReceipt.getOrderId()))
+        throw new RuntimeException("approveOrder failed");
 
-      // Should never happen, but in case of manual changes etc it's not really safe here...
-      if (paymentPreferences == null || paymentPreferences.size() != 1)
-        throw new RuntimeException("Order payment preferences not correctly setup");
-      
-      GenericValue paymentPreference = paymentPreferences.get(0);
-      
-      if ("PMNT_SENT".equals(paymentPreference.getString("statusId")))
-        throw new RuntimeException("Order is already paid for");
-      
-      paymentPreference.set("statusId", "PMNT_SENT");
-      delegator.store(paymentPreference);
-      
-      result = dispatcher.runSync("createPaymentFromPreference", UtilMisc.toMap("userLogin", userLogin,
-          "orderPaymentPreferenceId", paymentPreference.get("orderPaymentPreferenceId"), "paymentRefNum", paymentReceipt.getPaymentReference(),
-          "paymentFromId", config.getParameter("companyPartyId"), "comments", String.format("paymentProvider:%s/paymentProviderId:%s/paymentProviderReference:%s", paymentReceipt.getPaymentProvider(), paymentReceipt.getPaymentProviderId(), paymentReceipt.getPaymentReference())));
+//    result = dispatcher.runSync("changeOrderStatus", UtilMisc.toMap(
+//      "userLogin", userLogin
+//    , "statusId", "ORDER_APPROVED"
+//    , "setItemStatus", "Y"
+//    , "orderId", paymentReceipt.getOrderId()
+//     )
+//    );
+//
+//    if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+//      TransactionUtil.rollback();
+//      return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+//    }
 
-      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-        TransactionUtil.rollback();
-        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+    // Find single invoice id - or fail - it's unexpected and not safe to proceed with multiples 
+    // as we expect only a single payment for the full order
+      List<GenericValue> orderItemBillings = delegator.findByAnd("OrderItemBilling", UtilMisc.toMap("orderId", paymentReceipt.getOrderId()));
+      Set<String> invoiceIds = new HashSet<String>();
+      for (GenericValue orderItemBilling : orderItemBillings) {
+        invoiceIds.add(orderItemBilling.getString("invoiceId"));
       }
-
-      String paymentId = (String) result.get("paymentId");
+  
+      if (invoiceIds.size() != 1)
+        throw new RuntimeException("Unexpected number of invoices for order (there should be only 1): " + invoiceIds.size());
+  
+      String invoiceId = (String) invoiceIds.toArray()[0];
+  
+      // Check payment preference status
+      List<GenericValue> paymentApplications = delegator.findByAnd("PaymentApplication", UtilMisc.toMap("invoiceId", invoiceId));
+  
+      // Should never happen, but in case of manual changes etc it's not really safe here...
+      if (paymentApplications == null || paymentApplications.size() != 1)
+        throw new RuntimeException("Payment Application returns unexpected number based on invoice id (there should be exactly 1)");
       
-      Map<String, Object> finAccountTrans = UtilMisc.<String, Object>toMap("finAccountTransTypeId", "WITHDRAWAL");
-      finAccountTrans.put("finAccountId", paymentProviderConfig.getFinAccountId());
-//      finAccountTrans.put("partyId", config.getParameter("companyPartyId"));
-      finAccountTrans.put("partyId", paymentReceipt.getCitizenPartyId());
-      finAccountTrans.put("orderId", paymentReceipt.getOrderId());
-//      finAccountTrans.put("orderItemSeqId", orderItemSeqId);
-      finAccountTrans.put("reasonEnumId", "FATR_PURCHASE");
-      finAccountTrans.put("amount", paymentReceipt.getGrossAmount());
-      finAccountTrans.put("userLogin", userLogin);
-      finAccountTrans.put("paymentId", paymentId);
+      GenericValue paymentApplication = paymentApplications.get(0);
+      
+      String paymentId = (String) paymentApplication.get("paymentId");
+      
+      List<GenericValue> payments = delegator.findByAnd("Payment", UtilMisc.toMap("paymentId", paymentId));
+      
+      if (payments == null || payments.size() != 1)
+        throw new RuntimeException("Payment returns unexpected number based on payment id (there should be exactly 1)");
+  
+      GenericValue payment = payments.get(0);
+      
+      Map<String, Object> finAccountTrans = UtilMisc.<String, Object>toMap(
+        "userLogin", userLogin
+      , "finAccountTransTypeId", "WITHDRAWAL"
+      , "finAccountId", paymentProviderConfig.getFinAccountId()
+      , "partyId", config.getParameter("companyPartyId")
+      , "orderId", paymentReceipt.getOrderId()
+      , "amount", paymentReceipt.getNetAmount()
+      , "paymentId", paymentId
+      , "statusId", "FINACT_TRNS_CREATED"
+      , "comments", String.format("paymentProvider:%s/paymentProviderId:%s/paymentProviderReference:%s", paymentReceipt.getPaymentProvider(), paymentReceipt.getPaymentProviderId(), paymentReceipt.getPaymentReference())
+      );
 
       result = dispatcher.runSync("createFinAccountTrans", finAccountTrans);
 
@@ -145,20 +170,126 @@ public class SendPurchaseOrderPaymentResource {
         return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
       
-      // Approve order 
-      if (! OrderChangeHelper.approveOrder(dispatcher, userLogin, paymentReceipt.getOrderId()))
-        throw new RuntimeException("approveOrder failed");
+      String finAccountTransId = (String) result.get("finAccountTransId");
+      
+      Map<String, Object> updatePayment = UtilMisc.<String, Object>toMap(
+        "userLogin", userLogin
+      , "paymentId", paymentId
+      , "paymentMethodTypeId", "EXT_PAYPAL"
+      , "paymentMethodId", "CO_PAYPAL"
+      , "finAccountTransId", finAccountTransId
+      , "comments", ""
+      , "effectiveDate", UtilDateTime.nowTimestamp()
+      );
+      
+      result = dispatcher.runSync("updatePayment", updatePayment);
 
-      // Find single invoice id - or fail - it's unexpected and not safe to proceed with multiples 
-      // as we expect only a single payment for the full order
-      List<GenericValue> orderItemBillings = delegator.findByAnd("OrderItemBilling", UtilMisc.toMap("orderId", paymentReceipt.getOrderId()));
-      Set<String> invoiceIds = new HashSet<String>();
-      for (GenericValue orderItemBilling : orderItemBillings) {
-        invoiceIds.add(orderItemBilling.getString("invoiceId"));
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
       }
 
-      if (invoiceIds.size() != 1)
-        throw new RuntimeException("Unexpected number of invoices for order (there should be only 1): " + invoiceIds.size());
+      Map<String, Object> setPaymentStatus = UtilMisc.<String, Object>toMap(
+        "userLogin", userLogin
+      , "paymentId", paymentId
+      , "statusId", "PMNT_SENT"
+      );
+      
+      result = dispatcher.runSync("setPaymentStatus", setPaymentStatus);
+
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
+
+      Map<String, Object> createGlReconciliation = UtilMisc.<String, Object>toMap(
+        "userLogin", userLogin
+      , "glReconciliationName", "Reconciliation paymentId: " + paymentId
+      );
+
+      result = dispatcher.runSync("createGlReconciliation", createGlReconciliation);
+
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
+
+      String glReconciliationId = (String) result.get("glReconciliationId");
+
+      Map<String, Object> assignGlRecToFinAccTrans = UtilMisc.<String, Object>toMap(
+        "userLogin", userLogin
+      , "glReconciliationId", glReconciliationId
+      , "finAccountTransId", finAccountTransId
+      );
+      
+      result = dispatcher.runSync("assignGlRecToFinAccTrans", assignGlRecToFinAccTrans);
+
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
+      
+      Map<String, Object> reconcileFinAccountTrans = UtilMisc.<String, Object>toMap(
+        "userLogin", userLogin
+//        , "finAccountId", paymentProviderConfig.getFinAccountId()
+      , "finAccountTransId", finAccountTransId
+      , "organizationPartyId", config.getParameter("companyPartyId")
+//        , "glReconciliationId", glReconciliationId
+      );
+
+      result = dispatcher.runSync("reconcileFinAccountTrans", reconcileFinAccountTrans);
+
+      if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+        TransactionUtil.rollback();
+        return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+      }
+
+      BigDecimal feeAmount = paymentReceipt.getGrossAmount().subtract(paymentReceipt.getNetAmount());
+
+      // There's likely a fee charged by payment provider that we need to log: (gross - net) amounts returned by payment provider
+      if (feeAmount.compareTo(BigDecimal.ZERO) > 0) {
+        
+        // Create payment provider GL transaction to offset inherent fee 
+        Map<String, Object> quickCreateAcctgTransAndEntries = UtilMisc.<String, Object>toMap(
+            "userLogin", userLogin
+//          "finAccountTransId", "DEPOSIT"
+          , "transactionDate", UtilDateTime.nowTimestamp()
+          , "glFiscalTypeId", "ACTUAL"
+          , "organizationPartyId", config.getParameter("companyPartyId")
+          , "partyId", config.getParameter("companyPartyId")
+          , "amount", feeAmount
+          , "currencyUomId", paymentReceipt.getCurrency()
+          , "origAmount", feeAmount
+          , "origCurrencyUomId", paymentReceipt.getCurrency()
+          , "acctgTransEntryTypeId", "_NA_"
+          , "debitGlAccountId", paymentProviderConfig.getChargeGlDebitAccountId()
+          , "creditGlAccountId", paymentProviderConfig.getChargeGlCreditAccountId()
+          , "acctgTransTypeId", "EXTERNAL_ACCTG_TRANS"
+          , "invoiceId", invoiceId
+          , "paymentId", paymentId
+          , "groupStatusId", "AES_NOT_RECONCILED"
+        );
+
+        result = dispatcher.runSync("quickCreateAcctgTransAndEntries", quickCreateAcctgTransAndEntries);
+        
+        if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+          TransactionUtil.rollback();
+          return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        }
+
+        // Post transaction
+        Map<String, Object> postAcctgTrans = UtilMisc.<String, Object>toMap(
+          "acctgTransId", result.get("acctgTransId")
+        , "userLogin", userLogin
+        );
+        
+        result = dispatcher.runSync("postAcctgTrans", postAcctgTrans);
+        
+        if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
+          TransactionUtil.rollback();
+          return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
+        }
+      }
       
       TransactionUtil.commit();
 

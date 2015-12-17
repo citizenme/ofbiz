@@ -24,13 +24,17 @@ under the License.
   <PartyRole partyId="_NA_" roleTypeId="CARRIER"/>
 
   <ShipmentMethodType description="No Shipping" shipmentMethodTypeId="NO_SHIPPING"/>
+  <ShipmentMethodType shipmentMethodTypeId="STANDARD" description="Standard"/>
 
   <CarrierShipmentMethod partyId="_NA_" roleTypeId="CARRIER" shipmentMethodTypeId="NO_SHIPPING" sequenceNumber="1"/>
+  <CarrierShipmentMethod shipmentMethodTypeId="STANDARD" partyId="_NA_" roleTypeId="CARRIER" sequenceNumber="2"/>
 
-  <ProductStoreShipmentMeth productStoreShipMethId="10000" productStoreId="10000" partyId="_NA_" includeNoChargeItems="Y" allowUspsAddr="N" requireUspsAddr="N" roleTypeId="CARRIER" shipmentMethodTypeId="NO_SHIPPING" sequenceNumber="6"/>
+  <ProductStoreShipmentMeth productStoreShipMethId="10000" productStoreId="10000" partyId="_NA_" includeNoChargeItems="Y" allowUspsAddr="N" requireUspsAddr="N" roleTypeId="CARRIER" shipmentMethodTypeId="NO_SHIPPING" sequenceNumber="1"/>
+  <!-- ProductStoreShipmentMeth productStoreShipMethId="10000" productStoreId="10000" partyId="_NA_" includeNoChargeItems="Y" allowUspsAddr="N" requireUspsAddr="N" roleTypeId="CARRIER" shipmentMethodTypeId="STANDARD" sequenceNumber="2"/ -->
 
   <QuantityBreak fromQuantity="0.0" quantityBreakId="10000" quantityBreakTypeId="SHIP_WEIGHT" thruQuantity="0.0"/>
 
   <ShipmentCostEstimate productStoreShipMethId="10000" productStoreId="10000" shipmentCostEstimateId="10000" shipmentMethodTypeId="NO_SHIPPING" carrierPartyId="_NA_" carrierRoleTypeId="CARRIER" orderFlatPrice="0.0" orderPricePercent="0.0" orderItemFlatPrice="0.0"/>
+  <!-- ShipmentCostEstimate productStoreShipMethId="10000" productStoreId="10000" shipmentCostEstimateId="10000" shipmentMethodTypeId="STANDARD" carrierPartyId="_NA_" carrierRoleTypeId="CARRIER" orderFlatPrice="0.0" orderPricePercent="0.0" orderItemFlatPrice="0.0"/ -->
 
 </entity-engine-xml>

@@ -10,5 +10,18 @@
             Dummy service to prevent empty files and syntax error - Remove when the 1st real service will be added here 
         </description>
     </service> 
+
+    <service name="depositWithdrawPaymentNetAmount" engine="simple"
+            location="component://remoteintegration/script/com/citizenme/remoteintegration/finaccount/FinAccountServices.xml" invoke="depositWithdrawPaymentNetAmount">
+        <description>Deposit withdraw payments</description>
+        <attribute name="paymentIds" type="List" mode="IN" optional="false"/>
+        <attribute name="finAccountId" type="String" mode="IN" optional="false"/>
+        <attribute name="netAmount" type="BigDecimal" mode="IN" optional="false"/>
+        <attribute name="groupInOneTransaction" type="String" mode="IN" optional="true"/>
+        <attribute name="paymentGroupTypeId" type="String" mode="IN" optional="true"/>
+        <attribute name="paymentGroupName" type="String" mode="IN" optional="true"/>
+        <attribute name="finAccountTransId" type="String" mode="OUT" optional="true"/>
+        <attribute name="paymentGroupId" type="String" mode="OUT" optional="true"/>
+    </service>
     
 </services>

@@ -31,7 +31,8 @@
       "finAccountId": "10000",
       "chargeGlCreditAccountId": "709100",
       "chargeGlDebitAccountId": "113000",
-      "paymentMethodTypeId": "EXT_PAYPAL"
+      "paymentMethodTypeId": "EXT_PAYPAL",
+      "paymentMethodId": "CO_PAYPAL"
     }
   }
 }

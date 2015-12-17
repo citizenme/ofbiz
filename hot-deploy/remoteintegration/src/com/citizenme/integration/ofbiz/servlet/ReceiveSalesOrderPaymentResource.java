@@ -118,6 +118,7 @@ public class ReceiveSalesOrderPaymentResource {
         throw new RuntimeException("Order is already paid for");
       
       paymentPreference.set("statusId", "PAYMENT_RECEIVED");
+      // Was just a test
 //      paymentPreference.set("maxAmount", paymentReceipt.getNetAmount()); // Override Gross to create payment from actual amount received
       delegator.store(paymentPreference);
       
@@ -136,19 +137,6 @@ public class ReceiveSalesOrderPaymentResource {
       }
       
       String paymentId = (String) result.get("paymentId");
-/*
-      Map<String, Object> finAccountTrans = UtilMisc.<String, Object>toMap("finAccountTransTypeId", "DEPOSIT");
-      finAccountTrans.put("finAccountId", paymentProviderConfig.getFinAccountId());
-//      finAccountTrans.put("partyId", paymentReceipt.getClientOrganisationPartyId());
-      finAccountTrans.put("partyId", config.getParameter("companyPartyId"));
-      finAccountTrans.put("orderId", paymentReceipt.getOrderId());
-      finAccountTrans.pu  t("reasonEnumId", "FATR_PURCHASE");
-      finAccountTrans.put("amount", paymentReceipt.getNetAmount());
-      finAccountTrans.put("userLogin", userLogin);
-      finAccountTrans.put("paymentId", paymentId);
-      
-      result = dispatcher.runSync("createFinAccountTrans", finAccountTrans);
-*/
 
       Map<String, Object> finAccountTrans = UtilMisc.<String, Object>toMap(
         "userLogin", userLogin
@@ -157,9 +145,10 @@ public class ReceiveSalesOrderPaymentResource {
       , "groupInOneTransaction", "Y"
       , "paymentGroupTypeId", "BATCH_PAYMENT"
       , "paymentGroupName", "BATCH_PAYMENT paymentId: " + paymentId
+      , "netAmount", paymentReceipt.getNetAmount()
       );
       
-      result = dispatcher.runSync("depositWithdrawPayments", finAccountTrans);
+      result = dispatcher.runSync("depositWithdrawPaymentNetAmount", finAccountTrans);
 
       if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
         TransactionUtil.rollback();

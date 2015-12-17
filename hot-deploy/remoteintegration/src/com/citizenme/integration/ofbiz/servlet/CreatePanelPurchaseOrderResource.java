@@ -95,14 +95,15 @@ public class CreatePanelPurchaseOrderResource {
         , "currencyUom", order.getCurrency()
         , "productStoreId", config.getParameters().get("productStoreId") // CitizenMe store
         , "orderId", order.getOrderId()
-      //  , "placingCustomerPartyId", config.getParameter("companyPartyId")
-        , "endUserCustomerPartyId", config.getParameter("companyPartyId") // TODO: This should probably be client organisation
+        //, "placingCustomerPartyId", order.getCitizenPartyId()
+        // , "endUserCustomerPartyId", config.getParameter("companyPartyId") // TODO: This should probably be client organisation
         , "billToCustomerPartyId", config.getParameter("companyPartyId")
         , "billFromVendorPartyId", order.getCitizenPartyId()
+        , "shipFromVendorPartyId", order.getCitizenPartyId()
         , "supplierAgentPartyId", order.getCitizenPartyId()
         , "originFacilityId", config.getParameters().get("originFacilityId")
-        , "orderName", String.format("Referring Sales Order Id: %s", order.getReferringSalesOrderId())
-        , "webSiteId", "OrderEntry" // Required in order to later send order notifications?!?!
+        , "orderName", String.format("Panel Sales Order Id: %s", order.getReferringSalesOrderId())
+//        , "webSiteId", "OrderEntry" // Required in order to later send order notifications?!?!
       );
 
       // Add order payment info
@@ -117,16 +118,18 @@ public class CreatePanelPurchaseOrderResource {
 //      GenericValue orderBillingEmailContactMech = delegator.makeValue("OrderContactMech", UtilMisc.toMap("contactMechId", config.getParameter("purchaseOrderEmailContactMechId"), "contactMechPurposeTypeId", BILLING_EMAIL_PURPOSE_TYPE_ID));
 //      orderPaymentInfo.add(orderBillingEmailContactMech);
 
+      // FOR PURCHASE ORDERS THE PAYMENT PREFERENCES IS CREATED ON ORDER APPROVAL?!
       // Add order payment preference hard-coded for now as PAYPAL
-      GenericValue orderPaymentPreference = delegator.makeValue(
-          "OrderPaymentPreference"
-        , UtilMisc.toMap(
-            "paymentMethodTypeId", "EXT_PAYPAL"
-          , "maxAmount", order.getOrderTotal()
-      ));
-
-      orderPaymentInfo.add(orderPaymentPreference);
-      orderRequestMap.put("orderPaymentInfo", orderPaymentInfo);
+//      GenericValue orderPaymentPreference = delegator.makeValue(
+//          "OrderPaymentPreference"
+//        , UtilMisc.toMap(
+//            "paymentMethodTypeId", "EXT_PAYPAL"
+//          , "maxAmount", order.getOrderTotal()
+//          , "statusId", "PMNT_NOT_PAID"
+//      ));
+//
+//      orderPaymentInfo.add(orderPaymentPreference);
+//      orderRequestMap.put("orderPaymentInfo", orderPaymentInfo);
 
       int orderItemSeqId = 1;
       
