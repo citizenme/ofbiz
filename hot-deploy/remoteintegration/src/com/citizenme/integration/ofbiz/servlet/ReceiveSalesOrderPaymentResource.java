@@ -226,37 +226,18 @@ public class ReceiveSalesOrderPaymentResource {
       if (invoiceIds.size() != 1)
         throw new RuntimeException("Unexpected number of invoices for order (there should be only 1): " + invoiceIds.size());
       
-      // Now email the invoice
-      Locale locale = new Locale((String) config.getParameter("locale"));
-
       String invoiceId = (String) invoiceIds.toArray()[0];
-      
-      Map<String, Object> bodyParameters = UtilMisc.<String, Object>toMap(
-          "invoiceId", invoiceId
-        , "userLogin", userLogin
-        , "locale", locale);
 
-      Map<String, Object> sendMap = UtilMisc.<String, Object>toMap(
-        "sendFrom", (String) config.getParameter("invoiceEmailFrom")
-      , "sendTo", paymentReceipt.getInvoiceEmail()
-      , "xslfoAttachScreenLocation", "component://remoteintegration/widget/AccountingPrintScreens.xml#InvoicePDF"
-      , "subject", String.format((String) config.getParameter("invoiceEmailSubject"), invoiceId, paymentReceipt.getOrderId())
-      , "bodyText", (String) config.getParameter("invoiceEmailBodyText")
-      , "timeZone",  TimeZone.getTimeZone((String) config.getParameter("timeZone"))
-      , "locale", locale
-      , "userLogin", userLogin
-      , "bodyParameters", bodyParameters
-      );
-      
       BigDecimal feeAmount = paymentReceipt.getGrossAmount().subtract(paymentReceipt.getNetAmount());
 
       // There's likely a fee charged by payment provider that we need to log: (gross - net) amounts returned by payment provider
       if (feeAmount.compareTo(BigDecimal.ZERO) > 0) {
-/*        
-        // Create payment provider fee transaction
+        
+        // Create payment provider GL transaction to offset inherent fee 
         Map<String, Object> quickCreateAcctgTransAndEntries = UtilMisc.<String, Object>toMap(
+            "userLogin", userLogin
 //          "finAccountTransId", "DEPOSIT"
-            "transactionDate", UtilDateTime.nowTimestamp()
+          , "transactionDate", UtilDateTime.nowTimestamp()
           , "glFiscalTypeId", "ACTUAL"
           , "organizationPartyId", config.getParameter("companyPartyId")
           , "partyId", config.getParameter("companyPartyId")
@@ -268,7 +249,6 @@ public class ReceiveSalesOrderPaymentResource {
           , "debitGlAccountId", paymentProviderConfig.getChargeGlDebitAccountId()
           , "creditGlAccountId", paymentProviderConfig.getChargeGlCreditAccountId()
           , "acctgTransTypeId", "EXTERNAL_ACCTG_TRANS"
-          , "userLogin", userLogin
           , "invoiceId", invoiceId
           , "paymentId", paymentId
           , "groupStatusId", "AES_NOT_RECONCILED"
@@ -293,12 +273,31 @@ public class ReceiveSalesOrderPaymentResource {
           TransactionUtil.rollback();
           return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
         }
-*/
       }
+
+      // Now email the invoice
+      Locale locale = new Locale((String) config.getParameter("locale"));
+
+      Map<String, Object> bodyParameters = UtilMisc.<String, Object>toMap(
+          "invoiceId", invoiceId
+        , "userLogin", userLogin
+        , "locale", locale);
+
+      Map<String, Object> sendMap = UtilMisc.<String, Object>toMap(
+        "sendFrom", (String) config.getParameter("invoiceEmailFrom")
+      , "sendTo", paymentReceipt.getInvoiceEmail()
+      , "xslfoAttachScreenLocation", "component://remoteintegration/widget/AccountingPrintScreens.xml#InvoicePDF"
+      , "subject", String.format((String) config.getParameter("invoiceEmailSubject"), invoiceId, paymentReceipt.getOrderId())
+      , "bodyText", (String) config.getParameter("invoiceEmailBodyText")
+      , "timeZone",  TimeZone.getTimeZone((String) config.getParameter("timeZone"))
+      , "locale", locale
+      , "userLogin", userLogin
+      , "bodyParameters", bodyParameters
+      );
       
       // Don't let notification email below fail transaction - opportunistic best-effort email only ;-)
       TransactionUtil.commit();
-
+      
       dispatcher.runAsync("sendMailFromScreen", sendMap);
       
       return Response.ok(createOFBizResponseString(getClass().getName(), true, "OK")).type("application/json").build();
