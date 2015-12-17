@@ -107,19 +107,6 @@ public class SendPurchaseOrderPaymentResource {
       if (! OrderChangeHelper.approveOrder(dispatcher, userLogin, paymentReceipt.getOrderId()))
         throw new RuntimeException("approveOrder failed");
 
-//    result = dispatcher.runSync("changeOrderStatus", UtilMisc.toMap(
-//      "userLogin", userLogin
-//    , "statusId", "ORDER_APPROVED"
-//    , "setItemStatus", "Y"
-//    , "orderId", paymentReceipt.getOrderId()
-//     )
-//    );
-//
-//    if (ServiceUtil.isError(result) || ServiceUtil.isFailure(result)) {
-//      TransactionUtil.rollback();
-//      return Response.serverError().entity(createOFBizResponseString(getClass().getName(), false, ServiceUtil.getErrorMessage(result))).type("application/json").build();
-//    }
-
     // Find single invoice id - or fail - it's unexpected and not safe to proceed with multiples 
     // as we expect only a single payment for the full order
       List<GenericValue> orderItemBillings = delegator.findByAnd("OrderItemBilling", UtilMisc.toMap("orderId", paymentReceipt.getOrderId()));
@@ -159,7 +146,7 @@ public class SendPurchaseOrderPaymentResource {
       , "orderId", paymentReceipt.getOrderId()
       , "amount", paymentReceipt.getNetAmount()
       , "paymentId", paymentId
-      , "statusId", "FINACT_TRNS_CREATED"
+      , "statusId", "FINACT_TRNS_CREATED" // Needed for reconciliation
       , "comments", String.format("paymentProvider:%s/paymentProviderId:%s/paymentProviderReference:%s", paymentReceipt.getPaymentProvider(), paymentReceipt.getPaymentProviderId(), paymentReceipt.getPaymentReference())
       );
 
@@ -175,10 +162,10 @@ public class SendPurchaseOrderPaymentResource {
       Map<String, Object> updatePayment = UtilMisc.<String, Object>toMap(
         "userLogin", userLogin
       , "paymentId", paymentId
-      , "paymentMethodTypeId", "EXT_PAYPAL"
-      , "paymentMethodId", "CO_PAYPAL"
+      , "paymentMethodTypeId", paymentProviderConfig.getPaymentMethodTypeId()
+      , "paymentMethodId", paymentProviderConfig.getPaymentMethodId()
       , "finAccountTransId", finAccountTransId
-      , "comments", ""
+      , "comments", String.format("paymentProvider:%s/paymentProviderId:%s/paymentProviderReference:%s", paymentReceipt.getPaymentProvider(), paymentReceipt.getPaymentProviderId(), paymentReceipt.getPaymentReference())
       , "effectiveDate", UtilDateTime.nowTimestamp()
       );
       
