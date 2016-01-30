@@ -56,12 +56,12 @@ public class ReconcilePaymentsResource {
         throw new RuntimeException("Transaction is already unexpectedly started");
 
       if (pr.getPaymentReferenceIds().length == 0) {
-        throw new RuntimeException("Empty array of payment IDs received");
+        throw new RuntimeException("Empty array of payment ref ids received");
       }
 
       // todo repeat for all payment IDs
-      String paymentId = pr.getPaymentReferenceIds()[0];
-      List<GenericValue> payments = delegator.findByAnd("Payment", UtilMisc.toMap("paymentId", paymentId));
+      String paymentRef = pr.getPaymentReferenceIds()[0];
+      List<GenericValue> payments = delegator.findByAnd("Payment", UtilMisc.toMap("paymentRefNum", paymentRef));
 
       if (payments == null || payments.size() != 1) {
         throw new RuntimeException("Payment returns unexpected number based on payment id (there should be exactly 1)");
