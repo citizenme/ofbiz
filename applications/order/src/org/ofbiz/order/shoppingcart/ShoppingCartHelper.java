@@ -771,7 +771,7 @@ public class ShoppingCartHelper {
                         quantity = (BigDecimal) ObjectType.simpleTypeConvert(quantString, "BigDecimal", null, locale);
                         //For quantity we should test if we allow to add decimal quantity for this product an productStore : 
                         // if not and if quantity is in decimal format then return error.
-                        if(! ProductWorker.isDecimalQuantityOrderAllowed(delegator, item.getProductId(), cart.getProductStoreId())){
+                        if (!ProductWorker.isDecimalQuantityOrderAllowed(delegator, item.getProductId(), cart.getProductStoreId()) && parameterName.startsWith("update")) {
                             BigDecimal remainder = quantity.remainder(BigDecimal.ONE);
                             if (remainder.compareTo(BigDecimal.ZERO) != 0) {
                                 String errMsg = UtilProperties.getMessage(resource_error, "cart.addToCart.quantityInDecimalNotAllowed", this.cart.getLocale());
@@ -811,25 +811,28 @@ public class ShoppingCartHelper {
                                             oldDescription = item.getName();
                                             oldPrice = item.getBasePrice();
 
+                                            if (UtilValidate.isNotEmpty(item.getProductId())) {
+                                                GenericValue supplierProduct = this.cart.getSupplierProduct(item.getProductId(), quantity, this.dispatcher);
 
-                                            GenericValue supplierProduct = this.cart.getSupplierProduct(item.getProductId(), quantity, this.dispatcher);
-
-                                            if (supplierProduct == null) {
-                                                if ("_NA_".equals(cart.getPartyId())) {
-                                                    // no supplier does not require the supplier product
-                                                    item.setQuantity(quantity, dispatcher, this.cart);
-                                                    item.setName(item.getProduct().getString("internalName"));
+                                                if (supplierProduct == null) {
+                                                    if ("_NA_".equals(cart.getPartyId())) {
+                                                        // no supplier does not require the supplier product
+                                                        item.setQuantity(quantity, dispatcher, this.cart);
+                                                        item.setName(item.getProduct().getString("internalName"));
+                                                    } else {
+                                                        // in this case, the user wanted to purchase a quantity which is not available (probably below minimum)
+                                                        String errMsg = UtilProperties.getMessage(resource_error, "cart.product_not_valid_for_supplier", this.cart.getLocale());
+                                                        errMsg = errMsg + " (" + item.getProductId() + ", " + quantity + ", " + cart.getCurrency() + ")";
+                                                        errorMsgs.add(errMsg);
+                                                    }
                                                 } else {
-                                                    // in this case, the user wanted to purchase a quantity which is not available (probably below minimum)
-                                                    String errMsg = UtilProperties.getMessage(resource_error, "cart.product_not_valid_for_supplier", this.cart.getLocale());
-                                                    errMsg = errMsg + " (" + item.getProductId() + ", " + quantity + ", " + cart.getCurrency() + ")";
-                                                    errorMsgs.add(errMsg);
+                                                    item.setSupplierProductId(supplierProduct.getString("supplierProductId"));
+                                                    item.setQuantity(quantity, dispatcher, this.cart);
+                                                    item.setBasePrice(supplierProduct.getBigDecimal("lastPrice"));
+                                                    item.setName(ShoppingCartItem.getPurchaseOrderItemDescription(item.getProduct(), supplierProduct, cart.getLocale()));
                                                 }
                                             } else {
-                                                item.setSupplierProductId(supplierProduct.getString("supplierProductId"));
                                                 item.setQuantity(quantity, dispatcher, this.cart);
-                                                item.setBasePrice(supplierProduct.getBigDecimal("lastPrice"));
-                                                item.setName(ShoppingCartItem.getPurchaseOrderItemDescription(item.getProduct(), supplierProduct, cart.getLocale()));
                                             }
                                         }
                                     } else {
